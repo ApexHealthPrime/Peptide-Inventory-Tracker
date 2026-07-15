@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -55,7 +56,13 @@
       { label: "Other", compounds: ["Other"] },
     ];
 
-    const BLEND_COMPOUNDS = ["KLOW","GLOW","Other"];
+    const BLEND_COMPOUNDS = ["KLOW","GLOW","Wolverine","Other"];
+
+const BLEND_FORMULAS = {
+  "KLOW": "GHK-Cu + KPV + BPC-157 + TB-500",
+  "GLOW": "GHK-Cu + BPC-157 + TB-500",
+  "Wolverine": "BPC-157 + TB-500",
+};
     const NONPEPTIDE_CATEGORIES = [
       { label: "NAD+ Pathway", compounds: ["NAD+","NMN","NR (Nicotinamide Riboside)"] },
       { label: "Mitochondrial / Metabolic", compounds: ["5-Amino-1MQ","SLU-PP-332","Urolithin A","CoQ10","BAM15","MK-677","SR9009","Cardarine (GW-501516)"] },
@@ -82,13 +89,27 @@
       return null;
     }
 
+    // Guaranteed unique string ID
+    function uid() {
+      return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,9);
+    }
+
     // localStorage persistence
     function loadState() {
       try {
         const raw = localStorage.getItem("peptide_tracker_v1");
-        if (raw) return JSON.parse(raw);
+        if (raw) {
+          const data = JSON.parse(raw);
+          // Reassign clean string IDs to fix any legacy integer ID collisions
+          const reId = arr => (arr||[]).map(item => ({ ...item, id: uid() }));
+          return {
+            peptides: reId(data.peptides),
+            blends: reId(data.blends),
+            nonPeptides: reId(data.nonPeptides),
+          };
+        }
       } catch {}
-      return { peptides: [], blends: [], nonPeptides: [], nextId: 1 };
+      return { peptides: [], blends: [], nonPeptides: [] };
     }
     function saveState(data) {
       try { localStorage.setItem("peptide_tracker_v1", JSON.stringify(data)); } catch {}
@@ -361,7 +382,14 @@
                 {item.lotNumber && <span style={{ color: "#475569" }}> · Lot {item.lotNumber}</span>}
                 <span style={{ color: "#334155" }}> · {item.dateAdded}</span>
               </div>
-              <div style={{ marginTop: 6 }}><CategoryPill name={categoryName} /></div>
+              <div style={{ marginTop: 6 }}>
+                <CategoryPill name={categoryName} />
+                {BLEND_FORMULAS[item.displayCompound] && (
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
+                    {BLEND_FORMULAS[item.displayCompound]}
+                  </div>
+                )}
+              </div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 20, fontWeight: 900, color: "#a5b4fc" }}>${item.totalCost.toFixed(2)}</div>
@@ -421,7 +449,7 @@
       const [peptides, setPeptides] = useState(initial.peptides||[]);
       const [blends, setBlends] = useState(initial.blends||[]);
       const [nonPeptides, setNonPeptides] = useState(initial.nonPeptides||[]);
-      const [nextId, setNextId] = useState(initial.nextId||1);
+
 
       const [showAdd, setShowAdd] = useState(false);
       const [showEdit, setShowEdit] = useState(null);
@@ -438,7 +466,7 @@
       const setF = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
       // Auto-save to localStorage on every change
-      useEffect(() => { saveState({ peptides, blends, nonPeptides, nextId }); }, [peptides, blends, nonPeptides, nextId]);
+      useEffect(() => { saveState({ peptides, blends, nonPeptides }); }, [peptides, blends, nonPeptides]);
 
       const tabConfig = {
         peptides: { label: "Peptides", inventory: peptides, setInventory: setPeptides, categories: PEPTIDE_CATEGORIES, getCat: n => getCategoryForCompound(n, PEPTIDE_CATEGORIES) },
@@ -485,8 +513,8 @@
       }
 
       function handleAdd() {
-        tab.setInventory(prev => [...prev, buildItem(form, nextId)]);
-        setNextId(n=>n+1); setForm(emptyForm); setShowAdd(false);
+        tab.setInventory(prev => [...prev, buildItem(form, uid())]);
+        setForm(emptyForm); setShowAdd(false);
       }
 
       function openEdit(item) {
@@ -571,9 +599,9 @@
         reader.readAsText(file); e.target.value="";
       }
 
-      const detailItem = tab.inventory.find(i=>i.id===showDetail);
-      const adjustItem = tab.inventory.find(i=>i.id===showAdjust);
-      const editItem = tab.inventory.find(i=>i.id===showEdit);
+      const detailItem = [...peptides,...blends,...nonPeptides].find(i=>i.id===showDetail);
+      const adjustItem = tab.inventory.find(i=>i.id===showAdjust) || [...peptides,...blends,...nonPeptides].find(i=>i.id===showAdjust);
+      const editItem = tab.inventory.find(i=>i.id===showEdit) || [...peptides,...blends,...nonPeptides].find(i=>i.id===showEdit);
       const TABS = ["peptides","blends","nonpeptides"];
       const TAB_LABELS = { peptides:"Peptides", blends:"Blends", nonpeptides:"Non-Peptides" };
 
