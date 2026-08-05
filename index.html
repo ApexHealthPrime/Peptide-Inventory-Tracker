@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="PepTrack"/>
+  <meta name="theme-color" content="#020817"/>
+  <title>PepTrack</title>
+  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22PepTrack%22%2C%22short_name%22%3A%22PepTrack%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23020817%22%2C%22theme_color%22%3A%22%23020817%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%2527http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%3D%270%200%20100%20100%2527%253E%253Crect%2520width%3D%2527100%2527%2520height%3D%2527100%2527%2520rx%3D%252720%2527%2520fill%3D%2527%23020817%2527%2F%253E%253Ctext%2520y%3D%2527.9em%2527%2520font-size%3D%252780%2527%253E%25F0%259F%25A7%25AA%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D"/>
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23020817'/><text y='.9em' font-size='80'>🧪</text></svg>"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system,'Inter',system-ui,sans-serif;transition:background .2s,color .2s}
+    input,select,textarea,button{font-family:inherit}
+    .safe-top{padding-top:max(18px,env(safe-area-inset-top))}
+    .safe-bot{padding-bottom:max(60px,env(safe-area-inset-bottom))}
+    body.night{background:#020817;color:#e2e8f0}
+    body.day{background:#f1f5f9;color:#0f172a}
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+</head>
+<body class="night">
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useMemo,useRef,useEffect,useCallback}=React;
+
+// ── THEME ─────────────────────────────────────────────────────────────────────
+const N={bg:"#020817",bg2:"#0a0f1e",bg3:"#0f172a",bg4:"#1e293b",bd:"#1e293b",bd2:"#334155",tx:"#f8fafc",tx2:"#e2e8f0",tx3:"#94a3b8",tx4:"#475569",tx5:"#334155",inBg:"#1e293b",inBd:"#334155",hdr:"linear-gradient(135deg,#0f172a 0%,#1a1040 100%)",acc:"#6366f1",accT:"#a5b4fc",stat:"#818cf8"};
+const D={bg:"#f1f5f9",bg2:"#e2e8f0",bg3:"#ffffff",bg4:"#f8fafc",bd:"#cbd5e1",bd2:"#94a3b8",tx:"#0f172a",tx2:"#1e293b",tx3:"#475569",tx4:"#64748b",tx5:"#94a3b8",inBg:"#ffffff",inBd:"#cbd5e1",hdr:"linear-gradient(135deg,#1e293b 0%,#312e81 100%)",acc:"#4f46e5",accT:"#4f46e5",stat:"#4f46e5"};
+const T=(dk)=>dk?N:D;
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const PCAT=[
+  {label:"GLP-1 / Metabolic",compounds:["Retatrutide","Tirzepatide","Semaglutide","Liraglutide","Dulaglutide","Exenatide","Lixisenatide","Eloralintide","CB4211","Cagrilintide","CagriSema","VK2735","CT-388","MariTide (AMG-133)","Pemvidutide","Survodutide","Mazdutide","Efinopegdutide","Oxyntomodulin","Amylin","Pramlintide","Adropin"]},
+  {label:"Growth Hormone / IGF-1",compounds:["HGH (Somatropin)","Somapacitan","Lonapegsomatropin","Tesamorelin","CJC-1295","CJC-1295 DAC","Mod GRF 1-29","Sermorelin","Ipamorelin","GHRP-2","GHRP-6","Hexarelin","Alexamorelin","IGF-1 LR3","IGF-1 DES","PEG-MGF","MGF","Mecasermin","AOD-9604"]},
+  {label:"Recovery & Regeneration",compounds:["BPC-157","TB-500","Thymosin Beta-4","KPV","LL-37","ARA-290 (Cibinetide)","GHK-Cu","AHK-Cu","B7-33","FOXO4-DRI","TP508","P144","AP318","BPC-128","FX06"]},
+  {label:"Mitochondrial & Longevity",compounds:["MOTS-c","SS-31 (Elamipretide)","Humanin","SHLP-1","SHLP-2","SHLP-3","SHLP-4","SHLP-5","SHLP-6","Epithalon (Epitalon)","N-Acetyl Epitalon Amidate","Pinealon","Endoluten","Suprefort","Ventfort","Vladonix"]},
+  {label:"Cosmetic & Dermatology",compounds:["GHK-Cu","AHK-Cu","Melanotan I","Melanotan II","KTTKS (Matrixyl)","Pal-KTTKS","Copper Tripeptide-1"]},
+  {label:"Hormonal / Reproductive",compounds:["Kisspeptin-10","Kisspeptin-54","HCG","PT-141 (Bremelanotide)","Oxytocin","Carbetocin","Leuprolide","Triptorelin","Buserelin","Nafarelin","Deslorelin","Gonadorelin","GnRH","Vasopressin","Desmopressin","Terlipressin","Lypressin"]},
+  {label:"Neurology / Cognitive / Sleep",compounds:["Semax","NA-Semax Amidate","Selank","NA-Selank Amidate","Dihexa","P21","DSIP","PE-22-28","NAP (Davunetide)","Cerebrolysin","Cortagen","DDNSP","Retinalamin","Pinealon"]},
+  {label:"Immune / Thymic",compounds:["Thymosin Alpha-1 (TA-1)","Thymosin Beta-4","Thymalin","Thymogen","Thymulin","Thymopentin","TP5","TP508","Vilon","LL-37","KPV"]},
+  {label:"Organ Bioregulators",compounds:["Bronchogen","Cardiogen","Cartalax","Chonluten","Cortagen","Crystagen","Endoluten","Livagen","Ovargen","Pancregen","Prostamax","Prostatilen","Testagen","Vesilute","Vesugen","Vladonix","Ventfort","Suprefort"]},
+  {label:"Muscle & Performance",compounds:["Follistatin-344","Follistatin-315","ACE-031","Myostatin Propeptide","Activin Receptor Peptides"]},
+  {label:"Therapeutic Peptide Drugs",compounds:["Insulin","Insulin Lispro","Insulin Aspart","Insulin Glargine","Insulin Degludec","Glucagon","Pramlintide","Calcitonin","Teriparatide","Abaloparatide","Secretin","VIP","Cholecystokinin (CCK)","Motilin","GLP-2","Teduglutide","BNP","Nesiritide","Relaxin-2","Apelin","Angiotensin-(1-7)","Somatostatin analogs","Desmopressin (DDAVP)"]},
+  {label:"Oncology / Targeted Therapy",compounds:["LTX-315","PNC-27","PNC-28","BT1718","CEND-1","Melflufen","Lutetium-177 DOTATATE","Neoantigen peptide vaccines","Melittin-derived peptides","Cecropin-derived peptides"]},
+  {label:"Antimicrobial",compounds:["LL-37","Omiganan","Pexiganan","Histatin","Lactoferricin","Defensins","Cathelicidins","RTD-1"]},
+  {label:"Research / Experimental",compounds:["FEFKFEFK hydrogel","Peptide-graphene oxide hydrogels","RGD peptides","AP39","AP123","NDX-1017","CN-105","C16","AXT107","P140 (Lupuzor)","GEPP44","PEP20","XPro1595","BT200","ZP1849","AZP-3813","CB5138"]},
+  {label:"Other",compounds:["Other"]},
+];
+const BCAT=[{label:"Blends",compounds:["KLOW","GLOW","Wolverine","Other"]}];
+const BFORM={"KLOW":"GHK-Cu + KPV + BPC-157 + TB-500","GLOW":"GHK-Cu + BPC-157 + TB-500","Wolverine":"BPC-157 + TB-500"};
+const NPCAT=[
+  {label:"NAD+ Pathway",compounds:["NAD+","NMN","NR (Nicotinamide Riboside)"]},
+  {label:"Mitochondrial / Metabolic",compounds:["5-Amino-1MQ","SLU-PP-332","Urolithin A","CoQ10","BAM15","MK-677","SR9009","Cardarine (GW-501516)"]},
+  {label:"Other",compounds:["Other"]},
+];
+const MGS=[0.5,1,2,2.5,4,5,6,7.5,10,15,20,30,50];
+const UNITS=["mg","IU","mcg","units"];
+const TODAY=new Date().toISOString().split("T")[0];
+const STATUSES=["On Hand","Ordered","In Transit"];
+const SSTYLE={"On Hand":{bg:"#052e16",col:"#86efac",brd:""},"Ordered":{bg:"#431407",col:"#fdba74",brd:"#f97316"},"In Transit":{bg:"#422006",col:"#fcd34d",brd:"#eab308"}};
+const CCOLORS={"GLP-1 / Metabolic":"#6366f1","Growth Hormone / IGF-1":"#0ea5e9","Recovery & Regeneration":"#10b981","Mitochondrial & Longevity":"#f59e0b","Cosmetic & Dermatology":"#ec4899","Hormonal / Reproductive":"#a78bfa","Neurology / Cognitive / Sleep":"#38bdf8","Immune / Thymic":"#34d399","Organ Bioregulators":"#fb923c","Muscle & Performance":"#f87171","Therapeutic Peptide Drugs":"#94a3b8","Oncology / Targeted Therapy":"#e879f9","Antimicrobial":"#4ade80","Research / Experimental":"#fbbf24","Blends":"#a3e635","Non-Peptides":"#67e8f9","Other":"#64748b"};
+
+function getCat(name,cats){for(const c of cats){if(c.compounds.includes(name))return c.label;}return null;}
+function uid(){return Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,9);}
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+function load(){
+  try{
+    const r=localStorage.getItem("peptrack_v2");
+    if(r){
+      const d=JSON.parse(r);
+      const reId=a=>(a||[]).map(i=>({...i,id:uid()}));
+      return{p:reId(d.p||d.peptides||[]),b:reId(d.b||d.blends||[]),n:reId(d.n||d.nonPeptides||[]),dark:d.dark!==undefined?d.dark:true};
+    }
+    // try old key
+    const r2=localStorage.getItem("peptide_tracker_v1");
+    if(r2){
+      const d=JSON.parse(r2);
+      const reId=a=>(a||[]).map(i=>({...i,id:uid()}));
+      return{p:reId(d.peptides||[]),b:reId(d.blends||[]),n:reId(d.nonPeptides||[]),dark:d.darkMode!==undefined?d.darkMode:true};
+    }
+  }catch{}
+  return{p:[],b:[],n:[],dark:true};
+}
+function save(d){try{localStorage.setItem("peptrack_v2",JSON.stringify(d));}catch{}}
+
+// ── FORM ──────────────────────────────────────────────────────────────────────
+const EF={compound:"",custom:"",strength:"",customStr:"",unit:"mg",vendor:"",lot:"",kits:1,vpk:10,cpk:"",ship:"",fees:"",mass:false,purity:false,endo:false,coa:"",overfill:"",actual:"",notes:"",date:TODAY,status:"On Hand",eta:""};
+function total(f){return((parseFloat(f.cpk)||0)*(parseInt(f.kits)||1))+(parseFloat(f.ship)||0)+(parseFloat(f.fees)||0);}
+function tvials(f){return(parseInt(f.kits)||1)*(parseInt(f.vpk)||10);}
+
+// ── STABLE INPUTS (prevent keyboard dismiss on iOS) ───────────────────────────
+const SI=React.memo(function SI({val,onChange,style,ph,type,im,min,af}){
+  const[v,sv]=useState(val||"");
+  const prev=useRef(val);
+  useEffect(()=>{if(prev.current!==val){sv(val||"");prev.current=val;}},[val]);
+  return <input type={type||"text"} inputMode={im} min={min} autoFocus={af}
+    value={v} placeholder={ph} style={style}
+    onChange={e=>{sv(e.target.value);onChange(e.target.value);}}/>;
+});
+const STA=React.memo(function STA({val,onChange,style,ph}){
+  const[v,sv]=useState(val||"");
+  const prev=useRef(val);
+  useEffect(()=>{if(prev.current!==val){sv(val||"");prev.current=val;}},[val]);
+  return <textarea value={v} placeholder={ph} style={style} onChange={e=>{sv(e.target.value);onChange(e.target.value);}}/>;
+});
+
+// ── COMPOUND SEARCH ───────────────────────────────────────────────────────────
+function CSearch({val,onChange,cats,tk}){
+  const[q,sq]=useState("");
+  const[open,sOpen]=useState(false);
+  const ref=useRef(null);
+  const all=cats.flatMap(c=>c.compounds.map(x=>({name:x,cat:c.label})));
+  const filt=q.length>0?all.filter(x=>x.name.toLowerCase().includes(q.toLowerCase())).slice(0,14):[];
+  useEffect(()=>{
+    function h(e){if(ref.current&&!ref.current.contains(e.target))sOpen(false);}
+    document.addEventListener("mousedown",h);
+    return()=>document.removeEventListener("mousedown",h);
+  },[]);
+  function pick(name){onChange(name);sq(name==="Other"?"":name);sOpen(false);}
+  const dv=val&&val!=="Other"?val:q;
+  const inp={background:tk.inBg,border:`1px solid ${tk.inBd}`,borderRadius:8,color:tk.tx,padding:"8px 12px",fontSize:14,width:"100%",boxSizing:"border-box",outline:"none"};
+  return <div ref={ref} style={{position:"relative"}}>
+    <input value={dv} onChange={e=>{sq(e.target.value);onChange("");sOpen(true);}} onFocus={()=>sOpen(true)}
+      placeholder="Type to search or browse…" style={{...inp,paddingRight:32}} autoComplete="off"/>
+    {dv&&<button onClick={()=>{onChange("");sq("");sOpen(false);}} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:tk.tx4,fontSize:18,cursor:"pointer",padding:0}}>×</button>}
+    {open&&<div style={{position:"absolute",top:"calc(100% + 4px)",left:0,right:0,zIndex:300,background:tk.bg3,border:`1px solid ${tk.bd2}`,borderRadius:10,maxHeight:300,overflowY:"auto",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+      {q.length===0
+        ?cats.map(c=><div key={c.label}>
+            <div style={{padding:"5px 12px 3px",fontSize:10,color:CCOLORS[c.label]||"#6366f1",fontWeight:800,letterSpacing:1,textTransform:"uppercase",background:tk.bg2,position:"sticky",top:0}}>{c.label}</div>
+            {c.compounds.map(x=><div key={x} onClick={()=>pick(x)} style={{padding:"8px 16px",fontSize:13,color:tk.tx2,cursor:"pointer",borderBottom:`1px solid ${tk.bd}`}} onMouseEnter={e=>e.currentTarget.style.background=tk.bg4} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>{x}</div>)}
+          </div>)
+        :filt.length>0
+          ?filt.map(({name,cat})=><div key={name} onClick={()=>pick(name)} style={{padding:"9px 16px",fontSize:13,color:tk.tx2,cursor:"pointer",borderBottom:`1px solid ${tk.bd}`,display:"flex",justifyContent:"space-between",alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.background=tk.bg4} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <span>{name}</span><span style={{fontSize:10,color:CCOLORS[cat]||tk.tx4,fontWeight:700}}>{cat}</span>
+            </div>)
+          :<div>
+            <div style={{padding:"10px 16px",fontSize:13,color:tk.tx4}}>No match found</div>
+            <div onClick={()=>{onChange("Other");sOpen(false);}} style={{padding:"9px 16px",fontSize:13,color:"#a5b4fc",cursor:"pointer",borderTop:`1px solid ${tk.bd}`}} onMouseEnter={e=>e.currentTarget.style.background=tk.bg4} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>+ Add as custom</div>
+          </div>
+      }
+    </div>}
+  </div>;
+}
+
+// ── KIT FORM ──────────────────────────────────────────────────────────────────
+function KForm({f,sf,cats,dk}){
+  const tk=T(dk);
+  const inp={background:tk.inBg,border:`1px solid ${tk.inBd}`,borderRadius:8,color:tk.tx,padding:"8px 12px",fontSize:14,width:"100%",boxSizing:"border-box",outline:"none",colorScheme:dk?"dark":"light"};
+  const lbl={fontSize:11,color:tk.tx4,marginBottom:4,display:"block",fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"};
+  const tot=total(f);const tv=tvials(f);const pv=tv>0?tot/tv:0;
+  const sv=f.strength==="custom"?parseFloat(f.customStr):parseFloat(f.strength);
+  const cpu=(sv&&pv)?pv/sv:null;
+  function Fld({l,ch,sp}){return <div style={{marginBottom:14,gridColumn:sp?"1/-1":undefined}}><label style={lbl}>{l}</label>{ch}</div>;}
+  return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
+    <Fld l="Compound" sp><CSearch val={f.compound} onChange={v=>sf("compound",v)} cats={cats} tk={tk}/></Fld>
+    {f.compound==="Other"&&<Fld l="Compound Name" sp><SI val={f.custom} onChange={v=>sf("custom",v)} style={inp} ph="Enter name…"/></Fld>}
+
+    <Fld l="Strength (per vial)">
+      <div style={{display:"flex",gap:6}}>
+        <select value={f.strength} onChange={e=>sf("strength",e.target.value)} style={{...inp,flex:2}}>
+          <option value="">Select…</option>
+          {MGS.map(m=><option key={m} value={m}>{m}</option>)}
+          <option value="custom">Custom</option>
+        </select>
+        <select value={f.unit} onChange={e=>sf("unit",e.target.value)} style={{...inp,flex:1}}>
+          {UNITS.map(u=><option key={u}>{u}</option>)}
+        </select>
+      </div>
+    </Fld>
+    {f.strength==="custom"
+      ?<Fld l="Custom amount"><SI val={f.customStr} onChange={v=>{if(v===""||v==="."||/^\d*\.?\d*$/.test(v))sf("customStr",v);}} style={inp} ph="e.g. 8.5" af={true}/></Fld>
+      :<div/>}
+
+    <Fld l="Vendor"><SI val={f.vendor} onChange={v=>sf("vendor",v)} style={inp} ph="e.g. WWB"/></Fld>
+    <Fld l="Lot / Batch #"><SI val={f.lot} onChange={v=>sf("lot",v)} style={inp} ph="Optional"/></Fld>
+
+    <Fld l="Status">
+      <select value={f.status} onChange={e=>sf("status",e.target.value)} style={inp}>
+        {STATUSES.map(s=><option key={s}>{s}</option>)}
+      </select>
+    </Fld>
+    <Fld l="Expected Date">
+      <input type="date" value={f.eta} onChange={e=>sf("eta",e.target.value)} style={{...inp,colorScheme:dk?"dark":"light"}}/>
+    </Fld>
+
+    <Fld l="Kits Purchased"><SI val={String(f.kits)} onChange={v=>sf("kits",v)} style={inp} type="number" min="1"/></Fld>
+    <Fld l="Vials per Kit"><SI val={String(f.vpk)} onChange={v=>sf("vpk",v)} style={inp} type="number" min="1"/></Fld>
+    <Fld l="Cost per Kit ($)"><SI val={String(f.cpk)} onChange={v=>sf("cpk",v)} style={inp} type="number" ph="0.00"/></Fld>
+    <Fld l="Shipping ($)"><SI val={String(f.ship)} onChange={v=>sf("ship",v)} style={inp} type="number" ph="0.00"/></Fld>
+    <Fld l="Fees / Tax ($)"><SI val={String(f.fees)} onChange={v=>sf("fees",v)} style={inp} type="number" ph="0.00"/></Fld>
+    <div/>
+
+    <div style={{gridColumn:"1/-1",background:tk.bg4,borderRadius:10,padding:"12px 16px",marginBottom:14}}>
+      <div style={{fontSize:11,color:tk.tx4,fontWeight:700,letterSpacing:.5,textTransform:"uppercase"}}>Cost Summary</div>
+      <div style={{display:"flex",gap:20,marginTop:8,flexWrap:"wrap"}}>
+        <div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Total Paid</div><div style={{fontSize:20,fontWeight:900,color:"#a5b4fc"}}>${tot.toFixed(2)}</div><div style={{fontSize:10,color:tk.tx5}}>{f.kits||1}×${parseFloat(f.cpk)||0}+ship</div></div>
+        <div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Total Vials</div><div style={{fontSize:20,fontWeight:900,color:"#818cf8"}}>{tv}</div><div style={{fontSize:10,color:tk.tx5}}>{f.kits||1}×{f.vpk||10}</div></div>
+        <div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Cost/Vial</div><div style={{fontSize:20,fontWeight:900,color:"#6ee7b7"}}>${pv.toFixed(2)}</div></div>
+        {cpu&&<div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Cost/{f.unit||"mg"}</div><div style={{fontSize:20,fontWeight:900,color:"#fbbf24"}}>${cpu.toFixed(4)}</div></div>}
+      </div>
+    </div>
+
+    <Fld l="COA Available" sp>
+      <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+        {[["mass","Mass Spec"],["purity","Purity"],["endo","Endotoxin"]].map(([k,lv])=>(
+          <label key={k} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,color:tk.tx2}}>
+            <input type="checkbox" checked={f[k]} onChange={e=>sf(k,e.target.checked)} style={{width:15,height:15,accentColor:"#6366f1"}}/>{lv}
+          </label>
+        ))}
+      </div>
+    </Fld>
+    <Fld l="COA Link" sp><SI val={f.coa} onChange={v=>sf("coa",v)} style={inp} ph="https://…"/></Fld>
+    <Fld l="Overfill">
+      <select value={f.overfill} onChange={e=>sf("overfill",e.target.value)} style={inp}>
+        <option value="">Unknown</option><option>Overfilled</option><option>Accurate</option><option>Underfilled</option>
+      </select>
+    </Fld>
+    <Fld l={`Actual ${f.unit||"mg"}`}><SI val={String(f.actual)} onChange={v=>sf("actual",v)} style={inp} type="number" ph="e.g. 10.3"/></Fld>
+    <Fld l="Notes" sp><STA val={f.notes} onChange={v=>sf("notes",v)} style={{...inp,minHeight:60,resize:"vertical"}} ph="Any notes…"/></Fld>
+    <Fld l="Purchase Date" sp><input type="date" value={f.date||TODAY} onChange={e=>sf("date",e.target.value)} style={{...inp,colorScheme:dk?"dark":"light"}}/></Fld>
+  </div>;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function Modal({title,onClose,children,dk}){
+  const tk=T(dk);
+  return <div style={{position:"fixed",inset:0,background:"rgba(2,8,23,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}} onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div style={{background:tk.bg3,border:`1px solid ${tk.bd}`,borderRadius:18,padding:24,width:"100%",maxWidth:600,maxHeight:"92vh",overflowY:"auto",color:tk.tx}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <h2 style={{margin:0,fontSize:17,color:tk.tx,fontWeight:800}}>{title}</h2>
+        <button onClick={onClose} style={{background:"none",border:"none",color:tk.tx4,fontSize:24,cursor:"pointer"}}>×</button>
+      </div>
+      {children}
+    </div>
+  </div>;
+}
+
+// ── SMALL COMPONENTS ──────────────────────────────────────────────────────────
+function Bdg({ch,bg,col}){return <span style={{background:bg||"#1e293b",color:col||"#94a3b8",padding:"2px 8px",borderRadius:12,fontSize:11,fontWeight:700,whiteSpace:"nowrap",display:"inline-block"}}>{ch}</span>;}
+function StsBdg({s}){const st=SSTYLE[s]||SSTYLE["On Hand"];return <span style={{background:st.bg,color:st.col,padding:"2px 9px",borderRadius:12,fontSize:11,fontWeight:800,whiteSpace:"nowrap"}}>{s}</span>;}
+function CatPill({name}){const c=CCOLORS[name]||"#64748b";return <span style={{fontSize:10,fontWeight:700,color:c,background:c+"22",padding:"2px 7px",borderRadius:8,whiteSpace:"nowrap"}}>{name}</span>;}
+function CoaBdg({it}){return <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+  <Bdg bg={it.mass?"#064e3b":"#1e293b"} col={it.mass?"#6ee7b7":"#475569"} ch={`Mass ${it.mass?"✓":"✗"}`}/>
+  <Bdg bg={it.purity?"#064e3b":"#1e293b"} col={it.purity?"#6ee7b7":"#475569"} ch={`Purity ${it.purity?"✓":"✗"}`}/>
+  <Bdg bg={it.endo?"#064e3b":"#1e293b"} col={it.endo?"#6ee7b7":"#475569"} ch={`Endotoxin ${it.endo?"✓":"✗"}`}/>
+</div>;}
+
+// ── ITEM CARD ─────────────────────────────────────────────────────────────────
+function ICard({it,onDetail,onAdj,onRecv,catName,dk}){
+  const tk=T(dk);
+  const st=it.status||"On Hand";
+  const isOrd=st==="Ordered"||st==="In Transit";
+  const acc=SSTYLE[st]?.brd||CCOLORS[catName]||"#6366f1";
+  return <div style={{background:tk.bg3,border:`1px solid ${tk.bd}`,borderLeft:`3px solid ${acc}`,borderRadius:12,padding:14,cursor:"pointer",opacity:isOrd?.85:1}}
+    onClick={()=>onDetail(it.id)}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
+      <div>
+        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+          <span style={{fontSize:16,fontWeight:900,color:tk.tx}}>{it.displayCompound}</span>
+          {it.strength&&<Bdg bg={tk.bg4} col={tk.tx3} ch={`${it.strength} ${it.unit||"mg"}`}/>}
+          <StsBdg s={st}/>
+          {!isOrd&&it.qtyVials===0&&<Bdg bg="#450a0a" col="#fca5a5" ch="Sold Out"/>}
+          {!isOrd&&it.qtyVials>0&&it.qtyVials<=2&&<Bdg bg="#422006" col="#fcd34d" ch={`Low (${it.qtyVials})`}/>}
+          {!isOrd&&it.qtyVials>2&&<Bdg bg="#052e16" col="#86efac" ch={`In Stock (${it.qtyVials})`}/>}
+        </div>
+        <div style={{fontSize:12,marginTop:3}}>
+          <span style={{color:tk.tx,fontWeight:800}}>{it.vendor}</span>
+          {it.lot&&<span style={{color:tk.tx4}}> · Lot {it.lot}</span>}
+          <span style={{color:tk.tx5}}> · {it.dateAdded}</span>
+          {isOrd&&it.eta&&<span style={{color:"#fdba74",fontWeight:700}}> · ETA {it.eta}</span>}
+        </div>
+        <div style={{marginTop:5,display:"flex",gap:4,flexWrap:"wrap"}}>
+          <CatPill name={catName}/>
+          {BFORM[it.displayCompound]&&<span style={{fontSize:11,color:tk.tx4}}>{BFORM[it.displayCompound]}</span>}
+        </div>
+      </div>
+      <div style={{textAlign:"right"}}>
+        <div style={{fontSize:18,fontWeight:900,color:"#a5b4fc"}}>${(parseFloat(it.totalCost)||0).toFixed(2)}</div>
+        <div style={{fontSize:11,color:tk.tx4}}>${(parseFloat(it.cpv)||0).toFixed(2)}/vial</div>
+        {it.cpu&&<div style={{fontSize:11,color:"#fbbf24"}}>${(parseFloat(it.cpu)||0).toFixed(4)}/{it.unit||"mg"}</div>}
+        {(it.totalRevenue||0)>0&&<div style={{fontSize:11,color:(it.totalProfit||0)>=0?"#6ee7b7":"#f87171",fontWeight:700}}>P&L: {(it.totalProfit||0)>=0?"+":""}${(parseFloat(it.totalProfit)||0).toFixed(2)}</div>}
+      </div>
+    </div>
+    <div style={{marginTop:8,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}>
+      <CoaBdg it={it}/>
+      <div style={{display:"flex",gap:4}}>
+        {it.actual&&<Bdg bg={tk.bg4} col={tk.tx3} ch={`Actual ${it.actual} ${it.unit||"mg"}`}/>}
+        {it.overfill&&<Bdg bg={it.overfill==="Overfilled"?"#052e16":it.overfill==="Underfilled"?"#450a0a":tk.bg4} col={it.overfill==="Overfilled"?"#86efac":it.overfill==="Underfilled"?"#fca5a5":tk.tx3} ch={it.overfill}/>}
+      </div>
+    </div>
+    <div style={{marginTop:8,display:"flex",gap:6}} onClick={e=>e.stopPropagation()}>
+      {isOrd
+        ?<button onClick={()=>onRecv(it.id)} style={{flex:1,background:"#052e16",border:"1px solid #86efac",color:"#86efac",borderRadius:7,padding:"7px 0",fontSize:12,fontWeight:800,cursor:"pointer"}}>✓ Mark Received</button>
+        :[["use","Use"],["sell","Sell"],["restock","＋ Restock"]].map(([m,lbl])=>(
+          <button key={m} onClick={()=>onAdj(it.id,m)} style={{flex:1,background:tk.bg4,border:`1px solid ${tk.bd2}`,color:m==="restock"?"#a5b4fc":tk.tx3,borderRadius:7,padding:"6px 0",fontSize:12,fontWeight:700,cursor:"pointer"}}>{lbl}</button>
+        ))
+      }
+    </div>
+  </div>;
+}
+
+// ── STRENGTH GROUP ────────────────────────────────────────────────────────────
+function SGroup({sk,items,catName,onDetail,onAdj,onRecv,dk}){
+  const tk=T(dk);
+  const[open,sO]=useState(items.length===1);
+  const onH=items.filter(i=>(i.status||"On Hand")==="On Hand");
+  const ord=items.filter(i=>i.status==="Ordered"||i.status==="In Transit");
+  const toh=onH.reduce((s,i)=>s+i.qtyVials,0);
+  const ac=CCOLORS[catName]||"#6366f1";
+  return <div style={{background:tk.bg2,border:`1px solid ${tk.bd}`,borderRadius:10,overflow:"hidden",marginBottom:4}}>
+    <div onClick={()=>sO(o=>!o)} style={{padding:"9px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <span style={{fontSize:13,fontWeight:800,color:ac}}>{sk}</span>
+        <span style={{fontSize:11,color:tk.tx4}}>{items.length} kit{items.length!==1?"s":""}</span>
+        <Bdg bg="#052e16" col="#86efac" ch={`${toh} on hand`}/>
+        {ord.length>0&&<Bdg bg="#431407" col="#fdba74" ch={`${ord.length} on order`}/>}
+      </div>
+      <span style={{color:tk.tx4,fontSize:16,transform:open?"rotate(90deg)":"rotate(0deg)",transition:"transform .2s",display:"inline-block"}}>›</span>
+    </div>
+    {open&&<div style={{borderTop:`1px solid ${tk.bd}`,display:"flex",flexDirection:"column",gap:6,padding:8}}>
+      {items.map(it=><ICard key={it.id} it={it} catName={catName} onDetail={onDetail} onAdj={onAdj} onRecv={onRecv} dk={dk}/>)}
+    </div>}
+  </div>;
+}
+
+// ── COMPOUND GROUP ────────────────────────────────────────────────────────────
+function CGroup({cname,items,catName,onDetail,onAdj,onRecv,forceOpen,dk}){
+  const tk=T(dk);
+  const[open,sO]=useState(false);
+  const isOpen=forceOpen||open;
+  const onH=items.filter(i=>(i.status||"On Hand")==="On Hand");
+  const ord=items.filter(i=>i.status==="Ordered"||i.status==="In Transit");
+  const toh=onH.reduce((s,i)=>s+i.qtyVials,0);
+  const tord=ord.reduce((s,i)=>s+i.qtyVials,0);
+  const tCost=items.reduce((s,i)=>s+i.totalCost,0);
+  const cpuI=items.filter(i=>i.cpu);
+  const minC=cpuI.length?cpuI.reduce((mn,i)=>Math.min(mn,i.cpu),Infinity):null;
+  const maxC=cpuI.length?cpuI.reduce((mx,i)=>Math.max(mx,i.cpu),-Infinity):null;
+  const tRev=items.reduce((s,i)=>s+(i.totalRevenue||0),0);
+  const tProf=items.reduce((s,i)=>s+(i.totalProfit||0),0);
+  const ac=CCOLORS[catName]||"#6366f1";
+  const byStr={};
+  for(const it of items){const k=it.strength?`${it.strength} ${it.unit||"mg"}`:"Unknown";if(!byStr[k])byStr[k]=[];byStr[k].push(it);}
+  return <div style={{background:tk.bg3,border:`1px solid ${isOpen?ac+"66":tk.bd}`,borderLeft:`3px solid ${ac}`,borderRadius:12,marginBottom:8,overflow:"hidden"}}>
+    <div onClick={()=>!forceOpen&&sO(o=>!o)} style={{padding:"13px 16px",cursor:forceOpen?"default":"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        <span style={{fontSize:17,fontWeight:900,color:tk.tx}}>{cname}</span>
+        <span style={{fontSize:11,color:tk.tx4}}>{items.length} kit{items.length!==1?"s":""}</span>
+        <Bdg bg="#052e16" col="#86efac" ch={`${toh} on hand`}/>
+        {tord>0&&<Bdg bg="#431407" col="#fdba74" ch={`${tord} on order`}/>}
+        <div style={{display:"flex",gap:3}}>
+          {[["M",items.some(i=>i.mass)],["P",items.some(i=>i.purity)],["E",items.some(i=>i.endo)]].map(([l,has])=>(
+            <span key={l} style={{background:has?"#064e3b":"#1e293b",color:has?"#6ee7b7":"#334155",padding:"1px 6px",borderRadius:8,fontSize:10,fontWeight:700}}>{l}{has?"✓":"✗"}</span>
+          ))}
+        </div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:15,fontWeight:900,color:"#a5b4fc"}}>${tCost.toFixed(2)}</div>
+          {minC&&<div style={{fontSize:10,color:"#fbbf24"}}>${minC.toFixed(4)}–${maxC.toFixed(4)}/{items[0]?.unit||"mg"}</div>}
+          {tRev>0&&<div style={{fontSize:10,color:tProf>=0?"#6ee7b7":"#f87171",fontWeight:700}}>P&L: {tProf>=0?"+":""}${tProf.toFixed(2)}</div>}
+        </div>
+        {!forceOpen&&<span style={{color:tk.tx4,fontSize:18,transform:isOpen?"rotate(90deg)":"rotate(0deg)",transition:"transform .2s",display:"inline-block"}}>›</span>}
+      </div>
+    </div>
+    {isOpen&&<div style={{borderTop:`1px solid ${tk.bd}`,padding:"10px 12px",display:"flex",flexDirection:"column",gap:6}}>
+      {Object.entries(byStr).map(([k,si])=><SGroup key={k} sk={k} items={si} catName={catName} onDetail={onDetail} onAdj={onAdj} onRecv={onRecv} dk={dk}/>)}
+    </div>}
+  </div>;
+}
+
+// ── GROUPED INVENTORY ─────────────────────────────────────────────────────────
+function GInv({items,cats,onDetail,onAdj,onRecv,getC,filterActive,dk}){
+  const tk=T(dk);
+  const byCat=useMemo(()=>{
+    const m={};
+    for(const it of items){const c=getC(it.displayCompound)||"Other";if(!m[c])m[c]={};if(!m[c][it.displayCompound])m[c][it.displayCompound]=[];m[c][it.displayCompound].push(it);}
+    return m;
+  },[items,getC]);
+  const oc=[...cats.map(c=>c.label),"Other"].filter(c=>byCat[c]);
+  if(items.length===0)return <div style={{textAlign:"center",color:tk.tx4,padding:"60px 0",fontSize:15}}>No items yet — add your first one above.</div>;
+  return <div>
+    {oc.map(cat=><div key={cat} style={{marginBottom:24}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+        <div style={{width:3,height:16,background:CCOLORS[cat]||"#6366f1",borderRadius:2}}/>
+        <span style={{fontSize:12,fontWeight:800,color:CCOLORS[cat]||"#6366f1",letterSpacing:.5,textTransform:"uppercase"}}>{cat}</span>
+        <span style={{fontSize:11,color:tk.tx5}}>({Object.keys(byCat[cat]).length} compounds · {Object.values(byCat[cat]).flat().length} kits)</span>
+      </div>
+      {Object.entries(byCat[cat]).map(([cn,ci])=><CGroup key={cn} cname={cn} items={ci} catName={cat} onDetail={onDetail} onAdj={onAdj} onRecv={onRecv} forceOpen={filterActive} dk={dk}/>)}
+    </div>)}
+  </div>;
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function App(){
+  const init=load();
+  const[dk,sDk]=useState(init.dark);
+  const[P,sP]=useState(init.p);
+  const[B,sB]=useState(init.b);
+  const[NP,sNP]=useState(init.n);
+  const[tab,sTab]=useState("peptides");
+  const[showAdd,sAdd]=useState(false);
+  const[showEdit,sEdit]=useState(null);
+  const[showDetail,sDetail]=useState(null);
+  const[showAdj,sAdj]=useState(null);
+  const[adjMode,sAM]=useState("use");
+  const[adjQty,sAQ]=useState(1);
+  const[adjUnit,sAU]=useState("vial");
+  const[sellPx,sSPx]=useState("");
+  const[form,sForm]=useState(EF);
+  const[fVend,sFV]=useState("All");
+  const[fComp,sFC]=useState("All");
+  const[fStock,sFS]=useState("All");
+  const[fStat,sFSt]=useState("All");
+  const tk=T(dk);
+  const inp={background:tk.inBg,border:`1px solid ${tk.inBd}`,borderRadius:8,color:tk.tx,padding:"8px 12px",fontSize:14,width:"100%",boxSizing:"border-box",outline:"none",colorScheme:dk?"dark":"light"};
+  const lbl={fontSize:11,color:tk.tx4,marginBottom:4,display:"block",fontWeight:700,letterSpacing:.5,textTransform:"uppercase"};
+  const sf=(k,v)=>sForm(f=>({...f,[k]:v}));
+
+  useEffect(()=>{document.body.className=dk?"night":"day";},[dk]);
+  useEffect(()=>{save({p:P,b:B,n:NP,dark:dk});},[P,B,NP,dk]);
+
+  const TC={
+    peptides:{label:"Peptides",inv:P,sI:sP,cats:PCAT,getC:n=>getCat(n,PCAT)},
+    blends:{label:"Blends",inv:B,sI:sB,cats:BCAT,getC:()=>"Blends"},
+    nonpeptides:{label:"Non-Peptides",inv:NP,sI:sNP,cats:NPCAT,getC:n=>getCat(n,NPCAT)||"Other"},
+    sales:{label:"Sales",inv:[],sI:()=>{},cats:[],getC:()=>""},
+  };
+  const tc=TC[tab];
+  const curInv=tc.inv;
+  const sI=tc.sI;
+
+  const vendors=useMemo(()=>["All",...new Set(curInv.map(i=>i.vendor).filter(Boolean))],[curInv]);
+  const comps=useMemo(()=>["All",...[...new Set(curInv.map(i=>i.displayCompound).filter(Boolean))].sort()],[curInv]);
+
+  const filtered=useMemo(()=>curInv.filter(i=>{
+    if(i.archived&&i.qtyVials===0)return false;
+    if(fVend!=="All"&&i.vendor!==fVend)return false;
+    if(fComp!=="All"&&i.displayCompound!==fComp)return false;
+    if(fStock==="In Stock"&&!(i.qtyVials>2&&(i.status||"On Hand")==="On Hand"))return false;
+    if(fStock==="Low"&&!(i.qtyVials>0&&i.qtyVials<=2&&(i.status||"On Hand")==="On Hand"))return false;
+    if(fStock==="Out of Stock"&&!(i.qtyVials===0&&(i.status||"On Hand")==="On Hand"))return false;
+    if(fStat!=="All"&&(i.status||"On Hand")!==fStat)return false;
+    return true;
+  }),[curInv,fVend,fComp,fStock,fStat]);
+
+  const allI=[...P,...B,...NP];
+  const totInv=allI.reduce((s,i)=>s+i.totalCost,0);
+  const totOH=allI.filter(i=>(i.status||"On Hand")==="On Hand").reduce((s,i)=>s+i.qtyVials,0);
+  const totOrd=allI.filter(i=>i.status==="Ordered"||i.status==="In Transit").reduce((s,i)=>s+i.qtyVials,0);
+  const totRev=allI.reduce((s,i)=>s+(i.totalRevenue||0),0);
+  const totProf=allI.reduce((s,i)=>s+(i.totalProfit||0),0);
+  const allSales=allI.flatMap(i=>(i.sales||[]).map(s=>({...s,compound:i.displayCompound,vendor:i.vendor,unit:i.unit||"mg"})));
+
+  function mkItem(f,id){
+    const dc=f.compound==="Other"?f.custom:f.compound;
+    const sv=f.strength==="custom"?parseFloat(f.customStr):parseFloat(f.strength);
+    const tot=total(f);const tv=tvials(f);
+    const cpv=tv>0?tot/tv:tot;
+    const cpu=(sv&&cpv)?cpv/sv:null;
+    return{id,displayCompound:dc,strength:sv||null,unit:f.unit||"mg",vendor:f.vendor,lot:f.lot,kits:parseInt(f.kits)||1,vpk:parseInt(f.vpk)||10,qtyVials:tv,originalQty:tv,cpk:parseFloat(f.cpk)||0,ship:parseFloat(f.ship)||0,fees:parseFloat(f.fees)||0,totalCost:tot,cpv,cpu,mass:f.mass,purity:f.purity,endo:f.endo,coa:f.coa,overfill:f.overfill,actual:parseFloat(f.actual)||null,notes:f.notes,dateAdded:f.date||TODAY,status:f.status||"On Hand",eta:f.eta||"",sales:[],totalRevenue:0,totalProfit:0,archived:false,log:[`Added ${f.kits||1} kit(s) (${tv} vials) — ${f.status||"On Hand"} — ${f.date||TODAY}`]};
+  }
+
+  function handleAdd(){sI(prev=>[...prev,mkItem(form,uid())]);sForm(EF);sAdd(false);}
+
+  function openEdit(it){
+    sForm({compound:tc.cats.flatMap(c=>c.compounds).includes(it.displayCompound)?it.displayCompound:"Other",custom:tc.cats.flatMap(c=>c.compounds).includes(it.displayCompound)?"":it.displayCompound,strength:MGS.includes(it.strength)?String(it.strength):it.strength?"custom":"",customStr:MGS.includes(it.strength)?"":it.strength?String(it.strength):"",unit:it.unit||"mg",vendor:it.vendor||"",lot:it.lot||"",kits:it.kits||1,vpk:it.vpk||10,cpk:it.cpk||"",ship:it.ship||"",fees:it.fees||"",mass:it.mass||false,purity:it.purity||false,endo:it.endo||false,coa:it.coa||"",overfill:it.overfill||"",actual:it.actual||"",notes:it.notes||"",date:it.dateAdded||TODAY,status:it.status||"On Hand",eta:it.eta||""});
+    sEdit(it.id);sDetail(null);
+  }
+
+  function handleSaveEdit(){
+    const dc=form.compound==="Other"?form.custom:form.compound;
+    const sv=form.strength==="custom"?parseFloat(form.customStr):parseFloat(form.strength);
+    const tot=total(form);const tv=tvials(form);
+    sI(prev=>prev.map(it=>{
+      if(it.id!==showEdit)return it;
+      const cpv=tv>0?tot/tv:tot;const cpu=(sv&&cpv)?cpv/sv:null;
+      return{...it,displayCompound:dc,strength:sv||null,unit:form.unit||"mg",vendor:form.vendor,lot:form.lot,kits:parseInt(form.kits)||1,vpk:parseInt(form.vpk)||10,originalQty:tv,cpk:parseFloat(form.cpk)||0,ship:parseFloat(form.ship)||0,fees:parseFloat(form.fees)||0,totalCost:tot,cpv,cpu,mass:form.mass,purity:form.purity,endo:form.endo,coa:form.coa,overfill:form.overfill,actual:parseFloat(form.actual)||null,notes:form.notes,dateAdded:form.date||it.dateAdded,status:form.status||"On Hand",eta:form.eta||"",log:[...(it.log||[]),`Edited on ${new Date().toLocaleDateString()}`]};
+    }));
+    sEdit(null);sForm(EF);
+  }
+
+  function handleRecv(id){
+    sI(prev=>prev.map(it=>it.id!==id?it:{...it,status:"On Hand",eta:"",log:[...(it.log||[]),`Marked Received ${new Date().toLocaleDateString()}`]}));
+  }
+
+  function openAdj(id,mode){sAdj(id);sAM(mode);sAQ(1);sAU("vial");sSPx("");}
+
+  function handleAdj(){
+    const qty=parseInt(adjQty)||1;
+    sI(prev=>prev.map(it=>{
+      if(it.id!==showAdj)return it;
+      const vc=adjUnit==="kit"?qty*(it.vpk||1):qty;
+      const delta=adjMode==="restock"?vc:-vc;
+      const nq=Math.max(0,it.qtyVials+delta);
+      const lbl=adjUnit==="kit"?`${qty} kit(s) (${vc} vials)`:`${vc} vial(s)`;
+      const act=adjMode==="restock"?`Restocked +${lbl}`:adjMode==="sell"?`Sold ${lbl}`:`Used ${lbl}`;
+      let nSales=it.sales||[];let nRev=it.totalRevenue||0;let nProf=it.totalProfit||0;
+      if(adjMode==="sell"){
+        const ppv=parseFloat(sellPx)||0;
+        const rev=ppv*vc;const cost=it.cpv*vc;const prof=rev-cost;
+        nSales=[...nSales,{date:new Date().toLocaleDateString(),vials:vc,ppv,revenue:rev,cost,profit:prof,margin:rev>0?((prof/rev)*100).toFixed(1):0}];
+        nRev+=rev;nProf+=prof;
+      }
+      const archived=nq===0&&adjMode==="sell";
+      return{...it,qtyVials:nq,archived:archived?true:(it.archived||false),sales:nSales,totalRevenue:nRev,totalProfit:nProf,log:[...(it.log||[]),`${act} on ${new Date().toLocaleDateString()} → ${nq} remaining`]};
+    }));
+    sAdj(null);sSPx("");
+  }
+
+  function handleExport(){
+    const d={p:P,b:B,n:NP,exportedAt:new Date().toISOString(),version:2};
+    const blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=`peptrack-${TODAY}.json`;a.click();URL.revokeObjectURL(url);
+  }
+
+  function handleImport(e){
+    const file=e.target.files[0];if(!file)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const d=JSON.parse(ev.target.result);
+        const reId=a=>(a||[]).map(i=>({...i,id:uid()}));
+        if(d.p||d.peptides)sP(reId(d.p||d.peptides||[]));
+        if(d.b||d.blends)sB(reId(d.b||d.blends||[]));
+        if(d.n||d.nonPeptides)sNP(reId(d.n||d.nonPeptides||[]));
+        const cnt=(d.p||d.peptides||[]).length+(d.b||d.blends||[]).length+(d.n||d.nonPeptides||[]).length;
+        alert(`✅ Imported ${cnt} kits!`);
+      }catch{alert("Invalid file.");}
+    };
+    r.readAsText(file);e.target.value="";
+  }
+
+  const allInvs=[...P,...B,...NP];
+  const detailIt=allInvs.find(i=>i.id===showDetail);
+  const adjIt=allInvs.find(i=>i.id===showAdj);
+  const editIt=allInvs.find(i=>i.id===showEdit);
+  const TABS=["peptides","blends","nonpeptides","sales"];
+  const TLBL={peptides:"Peptides",blends:"Blends",nonpeptides:"Non-Peptides",sales:"💰 Sales"};
+  const filterActive=fVend!=="All"||fComp!=="All"||fStock!=="All"||fStat!=="All";
+
+  const tabBtnStyle=(t)=>({background:"none",border:"none",borderBottom:tab===t?"2px solid #6366f1":"2px solid transparent",color:tab===t?"#a5b4fc":tk.tx4,padding:"11px 14px",fontSize:13,fontWeight:700,cursor:"pointer"});
+  const bdgStyle=(t)=>({marginLeft:4,background:tab===t?"#6366f133":tk.bg4,color:tab===t?"#818cf8":tk.tx5,borderRadius:10,padding:"1px 6px",fontSize:11,fontWeight:800});
+
+  const btnStyle=(bg,col,border)=>({background:bg,color:col,border:border||"none",borderRadius:10,padding:"8px 12px",fontSize:13,fontWeight:700,cursor:"pointer"});
+
+  return <div style={{minHeight:"100vh",background:tk.bg,color:tk.tx}} className="safe-bot">
+    {/* HEADER */}
+    <div style={{background:tk.hdr,borderBottom:`1px solid ${tk.bd}`,padding:"16px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}} className="safe-top">
+      <div>
+        <div style={{display:"flex",alignItems:"baseline",gap:0}}>
+          <span style={{fontSize:28,fontWeight:900,background:"linear-gradient(135deg,#6366f1,#a78bfa,#38bdf8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",letterSpacing:-1}}>Pep</span>
+          <span style={{fontSize:28,fontWeight:900,background:"linear-gradient(135deg,#38bdf8,#6ee7b7)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",letterSpacing:-1}}>Track</span>
+          <span style={{fontSize:11,color:"#6366f1",fontWeight:800,letterSpacing:3,marginLeft:6,alignSelf:"center"}}>PRO</span>
+        </div>
+        <div style={{fontSize:10,color:"#475569",marginTop:1}}>by <a href="https://t.me/JESCO831" target="_blank" rel="noreferrer" style={{color:"#6366f1",fontWeight:700,textDecoration:"none"}}>TG @JESCO831</a></div>
+      </div>
+      <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{fontSize:12,color:"#94a3b8",textAlign:"right"}}>
+          <div><span style={{color:"#a5b4fc",fontWeight:800}}>${totInv.toFixed(2)}</span> invested</div>
+          <div style={{fontSize:10}}><span style={{color:"#86efac"}}>{totOH} on hand</span>{totOrd>0&&<span style={{color:"#fdba74"}}> · {totOrd} on order</span>}</div>
+          {totRev>0&&<div style={{fontSize:10,color:totProf>=0?"#6ee7b7":"#f87171",fontWeight:700}}>P&L: {totProf>=0?"+":""}${totProf.toFixed(2)}</div>}
+        </div>
+        <button onClick={()=>sDk(d=>!d)} style={{...btnStyle(dk?"#1e293b":"rgba(255,255,255,.15)","inherit",`1px solid ${dk?"#334155":"rgba(255,255,255,.3)"}`),borderRadius:20,fontSize:16,display:"flex",alignItems:"center",gap:4}}>
+          {dk?"☀️":"🌙"}<span style={{fontSize:11,color:dk?"#94a3b8":"rgba(255,255,255,.7)",fontWeight:600}}>{dk?"Day":"Night"}</span>
+        </button>
+        <label style={{...btnStyle("#1e293b","#94a3b8","1px solid #334155"),cursor:"pointer"}}>⬆ Import<input type="file" accept=".json" onChange={handleImport} style={{display:"none"}}/></label>
+        <button onClick={handleExport} style={btnStyle("#1e293b","#94a3b8","1px solid #334155")}>⬇ Export</button>
+        <button onClick={()=>{sForm(EF);sAdd(true);}} style={btnStyle("#6366f1","#fff")}>+ Add</button>
+      </div>
+    </div>
+
+    {/* TABS */}
+    <div style={{display:"flex",borderBottom:`1px solid ${tk.bd}`,background:tk.bg2}}>
+      {TABS.map(t=><button key={t} onClick={()=>{sTab(t);sFV("All");sFC("All");sFS("All");sFSt("All");}} style={tabBtnStyle(t)}>
+        {TLBL[t]}<span style={bdgStyle(t)}>{t==="sales"?allSales.length:TC[t].inv.length}</span>
+      </button>)}
+    </div>
+
+    {/* STATS (non-sales tabs) */}
+    {tab!=="sales"&&<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",background:tk.bg2,borderBottom:`1px solid ${tk.bd}`}}>
+      {[{l:"Kits",v:curInv.length},{l:"On Hand",v:curInv.filter(i=>(i.status||"On Hand")==="On Hand").reduce((s,i)=>s+i.qtyVials,0)},{l:"On Order",v:curInv.filter(i=>i.status==="Ordered"||i.status==="In Transit").length},{l:"Invested",v:`$${curInv.reduce((s,i)=>s+i.totalCost,0).toFixed(0)}`}].map(s=><div key={s.l} style={{padding:"10px 12px",borderRight:`1px solid ${tk.bd}`}}>
+        <div style={{fontSize:10,color:tk.tx5,fontWeight:800,textTransform:"uppercase"}}>{s.l}</div>
+        <div style={{fontSize:18,fontWeight:900,color:tk.stat,marginTop:1}}>{s.v}</div>
+      </div>)}
+    </div>}
+
+    {/* FILTERS (non-sales tabs) */}
+    {tab!=="sales"&&<div style={{padding:"10px 14px",display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",borderBottom:`1px solid ${tk.bd}`,background:tk.bg2}}>
+      {[{l:"VENDOR",v:fVend,s:sFV,o:["All",...new Set(curInv.map(i=>i.vendor).filter(Boolean))]},{l:"COMPOUND",v:fComp,s:sFC,o:["All",...[...new Set(curInv.map(i=>i.displayCompound).filter(Boolean))].sort()]},{l:"STOCK",v:fStock,s:sFS,o:["All","In Stock","Low","Out of Stock"]},{l:"STATUS",v:fStat,s:sFSt,o:["All",...STATUSES]}].map(f=>(
+        <div key={f.l} style={{display:"flex",alignItems:"center",gap:5}}>
+          <span style={{fontSize:9,color:tk.tx5,fontWeight:800,letterSpacing:1}}>{f.l}</span>
+          <select value={f.v} onChange={e=>f.s(e.target.value)} style={{...inp,width:"auto",fontSize:12,padding:"5px 8px"}}>{f.o.map(o=><option key={o}>{o}</option>)}</select>
+        </div>
+      ))}
+      {filterActive&&<button onClick={()=>{sFV("All");sFC("All");sFS("All");sFSt("All");}} style={{background:"none",border:`1px solid ${tk.bd2}`,color:tk.tx4,borderRadius:7,padding:"4px 10px",fontSize:11,cursor:"pointer"}}>Clear all</button>}
+      {filtered.length!==curInv.length&&<span style={{fontSize:11,color:tk.tx4}}>Showing {filtered.length} of {curInv.length}</span>}
+    </div>}
+
+    {/* INVENTORY */}
+    {tab!=="sales"&&<div style={{padding:"14px 14px"}}>
+      <GInv items={filtered} cats={tc.cats} getC={tc.getC} onDetail={id=>sDetail(id)} onAdj={openAdj} onRecv={handleRecv} filterActive={filterActive} dk={dk}/>
+    </div>}
+
+    {/* SALES DASHBOARD */}
+    {tab==="sales"&&<div style={{padding:"14px 14px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:20}}>
+        {[{l:"Total Revenue",v:`$${totRev.toFixed(2)}`,c:"#a5b4fc"},{l:"Total Profit",v:`${totProf>=0?"+":""}$${Math.abs(totProf).toFixed(2)}`,c:totProf>=0?"#6ee7b7":"#f87171"},{l:"COGS",v:`$${Math.max(0,totRev-totProf).toFixed(2)}`,c:"#94a3b8"},{l:"Margin",v:totRev>0?`${((totProf/totRev)*100).toFixed(1)}%`:"—",c:totProf>=0?"#6ee7b7":"#f87171"},{l:"Transactions",v:allSales.length,c:"#818cf8"},{l:"Vials Sold",v:allSales.reduce((s,i)=>s+i.vials,0),c:"#fb923c"}].map(s=>(
+          <div key={s.l} style={{background:tk.bg3,border:`1px solid ${tk.bd}`,borderRadius:12,padding:"14px 16px"}}>
+            <div style={{fontSize:10,color:tk.tx4,fontWeight:800,textTransform:"uppercase"}}>{s.l}</div>
+            <div style={{fontSize:22,fontWeight:900,color:s.c,marginTop:4}}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:12,color:tk.tx4,fontWeight:800,letterSpacing:.5,textTransform:"uppercase",marginBottom:10}}>Transaction History</div>
+      {allSales.length===0
+        ?<div style={{textAlign:"center",color:tk.tx5,padding:"40px 0",fontSize:14}}>No sales recorded yet</div>
+        :[...allSales].reverse().map((s,i)=>(
+          <div key={i} style={{background:tk.bg3,border:`1px solid ${tk.bd}`,borderRadius:10,padding:"12px 14px",marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:6}}>
+              <div>
+                <div style={{fontSize:14,fontWeight:800,color:tk.tx}}>{s.compound}</div>
+                <div style={{fontSize:11,color:tk.tx4}}>{s.vendor} · {s.date} · {s.vials} vials @ ${(s.ppv||0).toFixed(2)}/vial</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:15,fontWeight:900,color:s.profit>=0?"#6ee7b7":"#f87171"}}>{s.profit>=0?"+":""}${s.profit.toFixed(2)}</div>
+                <div style={{fontSize:10,color:tk.tx4}}>{s.revenue>0?((s.profit/s.revenue)*100).toFixed(1):0}% margin</div>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:12,marginTop:6,flexWrap:"wrap"}}>
+              <span style={{fontSize:11,color:"#a5b4fc"}}>Revenue: ${s.revenue.toFixed(2)}</span>
+              <span style={{fontSize:11,color:"#94a3b8"}}>Cost: ${s.cost.toFixed(2)}</span>
+            </div>
+          </div>
+        ))
+      }
+    </div>}
+
+    {/* ADD MODAL */}
+    {showAdd&&<Modal title={`Add Kit — ${tc.label}`} onClose={()=>sAdd(false)} dk={dk}>
+      <KForm f={form} sf={sf} cats={tc.cats} dk={dk}/>
+      <div style={{display:"flex",gap:10,marginTop:4}}>
+        <button onClick={()=>sAdd(false)} style={{flex:1,background:tk.bg4,border:`1px solid ${tk.bd2}`,color:tk.tx4,borderRadius:10,padding:"11px 0",fontSize:14,cursor:"pointer"}}>Cancel</button>
+        <button onClick={handleAdd} disabled={!form.compound||!form.vendor} style={{flex:2,background:form.compound&&form.vendor?"#6366f1":tk.bg4,color:form.compound&&form.vendor?"#fff":tk.tx5,border:"none",borderRadius:10,padding:"11px 0",fontSize:14,fontWeight:800,cursor:form.compound&&form.vendor?"pointer":"not-allowed"}}>Add to Inventory</button>
+      </div>
+    </Modal>}
+
+    {/* EDIT MODAL */}
+    {showEdit&&editIt&&<Modal title={`Edit — ${editIt.displayCompound}`} onClose={()=>{sEdit(null);sForm(EF);}} dk={dk}>
+      <KForm f={form} sf={sf} cats={tc.cats} dk={dk}/>
+      <div style={{display:"flex",gap:10,marginTop:4}}>
+        <button onClick={()=>{sEdit(null);sForm(EF);}} style={{flex:1,background:tk.bg4,border:`1px solid ${tk.bd2}`,color:tk.tx4,borderRadius:10,padding:"11px 0",fontSize:14,cursor:"pointer"}}>Cancel</button>
+        <button onClick={handleSaveEdit} style={{flex:2,background:"#6366f1",color:"#fff",border:"none",borderRadius:10,padding:"11px 0",fontSize:14,fontWeight:800,cursor:"pointer"}}>Save Changes</button>
+      </div>
+    </Modal>}
+
+    {/* ADJUST MODAL */}
+    {showAdj&&adjIt&&(()=>{
+      const qty=parseInt(adjQty)||1;
+      const vc=adjUnit==="kit"?qty*(adjIt.vpk||1):qty;
+      const rem=Math.max(0,adjIt.qtyVials-(adjMode!=="restock"?vc:0));
+      const ppv=parseFloat(sellPx)||0;
+      const rev=ppv*vc;const cost=adjIt.cpv*vc;const prof=rev-cost;
+      const margin=rev>0?((prof/rev)*100).toFixed(1):null;
+      return <Modal title={`${adjIt.displayCompound}${adjIt.strength?` · ${adjIt.strength} ${adjIt.unit||"mg"}`:""}`} onClose={()=>sAdj(null)} dk={dk}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+          <div style={{background:tk.bg4,borderRadius:10,padding:"12px 14px"}}>
+            <div style={{fontSize:10,color:tk.tx4,fontWeight:700,textTransform:"uppercase"}}>Vials Left</div>
+            <div style={{fontSize:26,fontWeight:900,color:tk.tx}}>{adjIt.qtyVials}</div>
+          </div>
+          <div style={{background:tk.bg4,borderRadius:10,padding:"12px 14px"}}>
+            <div style={{fontSize:10,color:tk.tx4,fontWeight:700,textTransform:"uppercase"}}>Kits ({adjIt.vpk||1} ea.)</div>
+            <div style={{fontSize:26,fontWeight:900,color:"#818cf8"}}>{adjIt.vpk?(adjIt.qtyVials/adjIt.vpk).toFixed(1):"—"}</div>
+          </div>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>Action</label>
+          <div style={{display:"flex",gap:8}}>
+            {[["use","Used"],["sell","Sold"],["restock","Restock"]].map(([m,l])=>(
+              <button key={m} onClick={()=>sAM(m)} style={{flex:1,padding:"9px 0",borderRadius:8,border:"none",fontSize:13,fontWeight:800,background:adjMode===m?"#6366f1":tk.bg4,color:adjMode===m?"#fff":tk.tx4,cursor:"pointer"}}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>By</label>
+          <div style={{display:"flex",gap:8}}>
+            {[["vial","Single Vial"],["kit",`Kit (${adjIt.vpk||1} vials)`]].map(([u,l])=>(
+              <button key={u} onClick={()=>{sAU(u);sAQ(1);}} style={{flex:1,padding:"8px 0",borderRadius:8,border:"none",fontSize:13,fontWeight:700,background:adjUnit===u?"#0f4c75":tk.bg4,color:adjUnit===u?"#7dd3fc":tk.tx4,cursor:"pointer"}}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={lbl}>Quantity</label>
+          <input type="number" min="1" value={adjQty} onChange={e=>sAQ(e.target.value)} style={inp}/>
+        </div>
+        {adjMode==="sell"&&<div style={{marginBottom:14}}>
+          <label style={lbl}>Price per Vial ($)</label>
+          <input type="number" value={sellPx} onChange={e=>sSPx(e.target.value)} style={inp} placeholder={`Min $${(parseFloat(adjIt.cpv)||0).toFixed(2)}`}/>
+        </div>}
+        <div style={{background:tk.bg4,borderRadius:10,padding:"12px 16px",marginBottom:16}}>
+          {adjMode!=="restock"
+            ?<div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+                <div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Deducting</div><div style={{fontSize:16,fontWeight:800,color:"#f87171"}}>{vc} vials</div></div>
+                <div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Remaining</div><div style={{fontSize:16,fontWeight:800,color:"#6ee7b7"}}>{rem}</div></div>
+                {adjMode==="sell"&&<>
+                  <div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Cost Basis</div><div style={{fontSize:16,fontWeight:800,color:"#94a3b8"}}>${cost.toFixed(2)}</div></div>
+                  {rev>0&&<>
+                    <div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Revenue</div><div style={{fontSize:16,fontWeight:800,color:"#a5b4fc"}}>${rev.toFixed(2)}</div></div>
+                    <div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Profit</div><div style={{fontSize:16,fontWeight:800,color:prof>=0?"#6ee7b7":"#f87171"}}>{prof>=0?"+":""}${prof.toFixed(2)}</div></div>
+                    {margin&&<div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Margin</div><div style={{fontSize:16,fontWeight:800,color:prof>=0?"#6ee7b7":"#f87171"}}>{margin}%</div></div>}
+                  </>}
+                  {rev===0&&<div style={{fontSize:11,color:tk.tx4,alignSelf:"center"}}>Enter price above to see profit</div>}
+                </>}
+              </div>
+            :<div><div style={{fontSize:10,color:tk.tx4,textTransform:"uppercase"}}>Adding</div><div style={{fontSize:18,fontWeight:800,color:"#6ee7b7"}}>+{vc} → {adjIt.qtyVials+vc} total</div></div>
+          }
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={()=>sAdj(null)} style={{flex:1,background:tk.bg4,border:`1px solid ${tk.bd2}`,color:tk.tx4,borderRadius:10,padding:"11px 0",fontSize:14,cursor:"pointer"}}>Cancel</button>
+          <button onClick={handleAdj} style={{flex:2,background:"#6366f1",color:"#fff",border:"none",borderRadius:10,padding:"11px 0",fontSize:14,fontWeight:800,cursor:"pointer"}}>Confirm</button>
+        </div>
+      </Modal>;
+    })()}
+
+    {/* DETAIL MODAL */}
+    {showDetail&&detailIt&&<Modal title={`${detailIt.displayCompound}${detailIt.strength?` · ${detailIt.strength} ${detailIt.unit||"mg"}`:""}`} onClose={()=>sDetail(null)} dk={dk}>
+      <div style={{marginBottom:12,display:"flex",gap:6,flexWrap:"wrap"}}>
+        <CatPill name={tc.getC(detailIt.displayCompound)||"Other"}/>
+        <StsBdg s={detailIt.status||"On Hand"}/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+        {[{l:"Vendor",v:detailIt.vendor||"—"},{l:"Lot #",v:detailIt.lot||"—"},{l:"Status",v:detailIt.status||"On Hand"},{l:"Expected",v:detailIt.eta||"—"},{l:"Kits",v:detailIt.kits||1},{l:"Vials/Kit",v:detailIt.vpk||1},{l:"Total Vials",v:`${detailIt.qtyVials}/${detailIt.originalQty}`},{l:"Strength",v:detailIt.strength?`${detailIt.strength} ${detailIt.unit||"mg"}/vial`:"—"},{l:"Price/Kit",v:`$${(parseFloat(detailIt.cpk)||0).toFixed(2)}`},{l:"Subtotal",v:`$${((parseFloat(detailIt.cpk)||0)*(detailIt.kits||1)).toFixed(2)}`},{l:"Shipping",v:`$${(parseFloat(detailIt.ship)||0).toFixed(2)}`},{l:"Fees",v:`$${(parseFloat(detailIt.fees)||0).toFixed(2)}`},{l:"Total Paid",v:`$${detailIt.totalCost.toFixed(2)}`},{l:"Cost/Vial",v:`$${(parseFloat(detailIt.cpv)||0).toFixed(2)}`},{l:`Cost/${detailIt.unit||"mg"}`,v:detailIt.cpu?`$${(parseFloat(detailIt.cpu)||0).toFixed(4)}`:"—"},{l:"Overfill",v:detailIt.overfill||"Unknown"},{l:`Actual ${detailIt.unit||"mg"}`,v:detailIt.actual?`${detailIt.actual} ${detailIt.unit||"mg"}`:"—"}].map(r=>(
+          <div key={r.l} style={{background:tk.bg4,borderRadius:8,padding:"9px 12px"}}>
+            <div style={{fontSize:10,color:tk.tx4,fontWeight:700,textTransform:"uppercase"}}>{r.l}</div>
+            <div style={{fontSize:13,fontWeight:800,color:tk.tx,marginTop:2}}>{r.v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{marginBottom:12}}><div style={lbl}>COA Status</div><CoaBdg it={detailIt}/></div>
+      {detailIt.coa&&<div style={{marginBottom:12}}><div style={lbl}>COA Link</div><a href={detailIt.coa} target="_blank" rel="noreferrer" style={{color:"#818cf8",fontSize:13,wordBreak:"break-all"}}>{detailIt.coa}</a></div>}
+      {detailIt.notes&&<div style={{marginBottom:12}}><div style={lbl}>Notes</div><div style={{fontSize:13,color:tk.tx2,background:tk.bg4,borderRadius:8,padding:"10px 12px"}}>{detailIt.notes}</div></div>}
+      {detailIt.sales&&detailIt.sales.length>0&&<div style={{marginBottom:12}}>
+        <div style={lbl}>Sales History</div>
+        <div style={{background:tk.bg4,borderRadius:8,padding:"10px 12px",display:"flex",flexDirection:"column",gap:5,maxHeight:160,overflowY:"auto"}}>
+          {detailIt.sales.map((s,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,borderBottom:`1px solid ${tk.bd}`,paddingBottom:4}}>
+              <span style={{color:tk.tx3}}>{s.date} · {s.vials} vials @ ${(s.ppv||0).toFixed(2)}</span>
+              <span style={{color:s.profit>=0?"#6ee7b7":"#f87171",fontWeight:700}}>{s.profit>=0?"+":""}${s.profit.toFixed(2)}</span>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:12,paddingTop:4,flexWrap:"wrap"}}>
+            <span style={{fontSize:11,color:"#a5b4fc"}}>Revenue: ${(parseFloat(detailIt.totalRevenue)||0).toFixed(2)}</span>
+            <span style={{fontSize:11,color:(detailIt.totalProfit||0)>=0?"#6ee7b7":"#f87171"}}>Profit: {(detailIt.totalProfit||0)>=0?"+":""}${(parseFloat(detailIt.totalProfit)||0).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>}
+      <div style={{marginBottom:14}}><div style={lbl}>Activity Log</div>
+        <div style={{background:tk.bg4,borderRadius:8,padding:"10px 12px",display:"flex",flexDirection:"column",gap:4,maxHeight:120,overflowY:"auto"}}>
+          {(detailIt.log||[]).map((l,i)=><div key={i} style={{fontSize:12,color:tk.tx4}}>· {l}</div>)}
+        </div>
+      </div>
+      {(detailIt.status==="Ordered"||detailIt.status==="In Transit")&&<button onClick={()=>{handleRecv(detailIt.id);sDetail(null);}} style={{width:"100%",background:"#052e16",border:"1px solid #86efac",color:"#86efac",borderRadius:10,padding:"11px 0",fontSize:14,fontWeight:800,cursor:"pointer",marginBottom:10}}>✓ Mark as Received</button>}
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={()=>openEdit(detailIt)} style={{flex:1,background:tk.bg4,border:"1px solid #6366f1",color:"#a5b4fc",borderRadius:10,padding:"10px 0",fontSize:13,fontWeight:800,cursor:"pointer"}}>✏️ Edit</button>
+        <button onClick={()=>{if(confirm("Delete this kit?")){sI(prev=>prev.filter(i=>i.id!==detailIt.id));sDetail(null);}}} style={{flex:1,background:"none",border:"1px solid #7f1d1d",color:"#f87171",borderRadius:10,padding:"10px 0",fontSize:13,cursor:"pointer"}}>Delete</button>
+      </div>
+    </Modal>}
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+<script>
+if('serviceWorker' in navigator){
+  const c=`const CACHE='peptrack-v3';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));self.skipWaiting();});self.addEventListener('activate',e=>{self.clients.claim();});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match('./'))));});`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([c],{type:'application/javascript'}))).catch(()=>{});
+}
+</script>
+</body>
+</html>
