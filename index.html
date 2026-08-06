@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="PepTrack"/>
+<meta name="theme-color" content="#020817"/>
+<title>PepTrack</title>
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22PepTrack%22%2C%22short_name%22%3A%22PepTrack%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23020817%22%2C%22theme_color%22%3A%22%23020817%22%7D"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23020817'/><text y='.9em' font-size='80'>🧪</text></svg>"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,system-ui,sans-serif;background:#020817;color:#e2e8f0}
+input,select,textarea,button{font-family:inherit}
+.st{padding-top:max(18px,env(safe-area-inset-top))}
+.sb{padding-bottom:max(60px,env(safe-area-inset-bottom))}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+var useState=React.useState,useEffect=React.useEffect,useRef=React.useRef,useMemo=React.useMemo;
+
+// ── COLORS ───────────────────────────────────────────────────────────────────
+var CC={"GLP-1 / Metabolic":"#6366f1","Growth Hormone / IGF-1":"#0ea5e9","Recovery & Regeneration":"#10b981","Mitochondrial & Longevity":"#f59e0b","Cosmetic & Dermatology":"#ec4899","Hormonal / Reproductive":"#a78bfa","Neurology / Cognitive / Sleep":"#38bdf8","Immune / Thymic":"#34d399","Organ Bioregulators":"#fb923c","Muscle & Performance":"#f87171","Therapeutic Peptide Drugs":"#94a3b8","Oncology / Targeted Therapy":"#e879f9","Antimicrobial":"#4ade80","Research / Experimental":"#fbbf24","Blends":"#a3e635","Other":"#64748b"};
+
+// ── DATA ─────────────────────────────────────────────────────────────────────
+var PCAT=[
+  {label:"GLP-1 / Metabolic",compounds:["Retatrutide","Tirzepatide","Semaglutide","Liraglutide","Dulaglutide","Exenatide","Lixisenatide","Eloralintide","CB4211","Cagrilintide","CagriSema","VK2735","CT-388","MariTide (AMG-133)","Pemvidutide","Survodutide","Mazdutide","Efinopegdutide","Oxyntomodulin","Amylin","Pramlintide","Adropin"]},
+  {label:"Growth Hormone / IGF-1",compounds:["HGH (Somatropin)","Somapacitan","Lonapegsomatropin","Tesamorelin","CJC-1295","CJC-1295 DAC","Mod GRF 1-29","Sermorelin","Ipamorelin","GHRP-2","GHRP-6","Hexarelin","Alexamorelin","IGF-1 LR3","IGF-1 DES","PEG-MGF","MGF","Mecasermin","AOD-9604"]},
+  {label:"Recovery & Regeneration",compounds:["BPC-157","TB-500","Thymosin Beta-4","KPV","LL-37","ARA-290 (Cibinetide)","GHK-Cu","AHK-Cu","B7-33","FOXO4-DRI","TP508","P144","AP318","BPC-128","FX06"]},
+  {label:"Mitochondrial & Longevity",compounds:["MOTS-c","SS-31 (Elamipretide)","Humanin","SHLP-1","SHLP-2","SHLP-3","SHLP-4","SHLP-5","SHLP-6","Epithalon (Epitalon)","N-Acetyl Epitalon Amidate","Pinealon","Endoluten","Suprefort","Ventfort","Vladonix"]},
+  {label:"Cosmetic & Dermatology",compounds:["GHK-Cu","AHK-Cu","Melanotan I","Melanotan II","KTTKS (Matrixyl)","Pal-KTTKS","Copper Tripeptide-1"]},
+  {label:"Hormonal / Reproductive",compounds:["Kisspeptin-10","Kisspeptin-54","HCG","PT-141 (Bremelanotide)","Oxytocin","Carbetocin","Leuprolide","Triptorelin","Buserelin","Nafarelin","Deslorelin","Gonadorelin","GnRH","Vasopressin","Desmopressin","Terlipressin","Lypressin"]},
+  {label:"Neurology / Cognitive / Sleep",compounds:["Semax","NA-Semax Amidate","Selank","NA-Selank Amidate","Dihexa","P21","DSIP","PE-22-28","NAP (Davunetide)","Cerebrolysin","Cortagen","DDNSP","Retinalamin","Pinealon"]},
+  {label:"Immune / Thymic",compounds:["Thymosin Alpha-1 (TA-1)","Thymosin Beta-4","Thymalin","Thymogen","Thymulin","Thymopentin","TP5","TP508","Vilon","LL-37","KPV"]},
+  {label:"Organ Bioregulators",compounds:["Bronchogen","Cardiogen","Cartalax","Chonluten","Cortagen","Crystagen","Endoluten","Livagen","Ovargen","Pancregen","Prostamax","Prostatilen","Testagen","Vesilute","Vesugen","Vladonix","Ventfort","Suprefort"]},
+  {label:"Muscle & Performance",compounds:["Follistatin-344","Follistatin-315","ACE-031","Myostatin Propeptide","Activin Receptor Peptides"]},
+  {label:"Therapeutic Peptide Drugs",compounds:["Insulin","Insulin Lispro","Insulin Aspart","Insulin Glargine","Insulin Degludec","Glucagon","Pramlintide","Calcitonin","Teriparatide","Abaloparatide","Secretin","VIP","Cholecystokinin (CCK)","Motilin","GLP-2","Teduglutide","BNP","Nesiritide","Relaxin-2","Apelin","Angiotensin-(1-7)","Somatostatin analogs","Desmopressin (DDAVP)"]},
+  {label:"Oncology / Targeted Therapy",compounds:["LTX-315","PNC-27","PNC-28","BT1718","CEND-1","Melflufen","Lutetium-177 DOTATATE","Neoantigen peptide vaccines","Melittin-derived peptides","Cecropin-derived peptides"]},
+  {label:"Antimicrobial",compounds:["LL-37","Omiganan","Pexiganan","Histatin","Lactoferricin","Defensins","Cathelicidins","RTD-1"]},
+  {label:"Research / Experimental",compounds:["FEFKFEFK hydrogel","Peptide-graphene oxide hydrogels","RGD peptides","AP39","AP123","NDX-1017","CN-105","C16","AXT107","P140 (Lupuzor)","GEPP44","PEP20","XPro1595","BT200","ZP1849","AZP-3813","CB5138"]},
+  {label:"Other",compounds:["Other"]}
+];
+var BCAT=[{label:"Blends",compounds:["KLOW","GLOW","Wolverine","Other"]}];
+var NCAT=[{label:"NAD+ Pathway",compounds:["NAD+","NMN","NR (Nicotinamide Riboside)"]},{label:"Mitochondrial / Metabolic",compounds:["5-Amino-1MQ","SLU-PP-332","Urolithin A","CoQ10","BAM15","MK-677","SR9009","Cardarine (GW-501516)"]},{label:"Other",compounds:["Other"]}];
+var BFORM={"KLOW":"GHK-Cu + KPV + BPC-157 + TB-500","GLOW":"GHK-Cu + BPC-157 + TB-500","Wolverine":"BPC-157 + TB-500"};
+var MGS=[0.5,1,2,2.5,4,5,6,7.5,10,15,20,30,50];
+var UNITS=["mg","IU","mcg","units"];
+var STATS=["On Hand","Ordered","In Transit"];
+var TODAY=new Date().toISOString().split("T")[0];
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
+function getCat(name,cats){for(var i=0;i<cats.length;i++){if(cats[i].compounds.indexOf(name)>-1)return cats[i].label;}return "Other";}
+
+// ── NORMALIZE old/new field names ────────────────────────────────────────────
+function norm(i){
+  var cpk=parseFloat(i.cpk!==undefined?i.cpk:i.costPerKit)||0;
+  var ship=parseFloat(i.ship!==undefined?i.ship:i.shipping)||0;
+  var fees=parseFloat(i.fees)||0;
+  var kits=parseInt(i.kits||i.kitsQty)||1;
+  var vpk=parseInt(i.vpk||i.vialsPerKit)||10;
+  var qv=parseInt(i.qtyVials)||(kits*vpk);
+  var tot=parseFloat(i.totalCost)||((cpk*kits)+ship+fees);
+  var cpv=parseFloat(i.cpv||i.costPerVial)||(qv>0?tot/qv:0);
+  var str=i.strength!==undefined?i.strength:(i.mg!==undefined?i.mg:null);
+  var strN=str!==null?parseFloat(str):null;
+  var cpu=parseFloat(i.cpu||i.costPerUnit)||(strN&&cpv?cpv/strN:null)||null;
+  return {
+    id:uid(),
+    displayCompound:i.displayCompound||i.compound||"",
+    strength:strN,unit:i.unit||i.strengthUnit||"mg",
+    vendor:i.vendor||"",lot:i.lot||i.lotNumber||"",
+    kits:kits,vpk:vpk,qtyVials:qv,originalQty:parseInt(i.originalQty)||qv,
+    cpk:cpk,ship:ship,fees:fees,totalCost:tot,cpv:cpv,cpu:cpu,
+    mass:!!(i.mass!==undefined?i.mass:i.hasMass),
+    purity:!!(i.purity!==undefined?i.purity:i.hasPurity),
+    endo:!!(i.endo!==undefined?i.endo:i.hasEndotoxin),
+    coa:i.coa||i.coaLink||"",overfill:i.overfill||"",
+    actual:parseFloat(i.actual||i.actualStrength||i.actualMg)||null,
+    notes:i.notes||"",dateAdded:i.dateAdded||TODAY,
+    status:i.status||"On Hand",eta:i.eta||i.expectedDate||"",
+    sales:i.sales||[],totalRevenue:parseFloat(i.totalRevenue)||0,
+    totalProfit:parseFloat(i.totalProfit)||0,archived:!!i.archived,log:i.log||[]
+  };
+}
+
+function load(){
+  try{
+    var r=localStorage.getItem("peptrack_v3");
+    if(r){var d=JSON.parse(r);return{p:(d.p||[]).map(norm),b:(d.b||[]).map(norm),n:(d.n||[]).map(norm),dk:d.dk!==false};}
+    var r2=localStorage.getItem("peptrack_v2")||localStorage.getItem("peptide_tracker_v1");
+    if(r2){var d2=JSON.parse(r2);var pp=d2.p||d2.peptides||[];var bb=d2.b||d2.blends||[];var nn=d2.n||d2.nonPeptides||[];return{p:pp.map(norm),b:bb.map(norm),n:nn.map(norm),dk:true};}
+  }catch(e){}
+  return{p:[],b:[],n:[],dk:true};
+}
+function save(p,b,n,dk){try{localStorage.setItem("peptrack_v3",JSON.stringify({p:p,b:b,n:n,dk:dk}));}catch(e){}}
+
+// ── STYLES ───────────────────────────────────────────────────────────────────
+var INP={background:"#1e293b",border:"1px solid #334155",borderRadius:8,color:"#e2e8f0",padding:"8px 12px",fontSize:14,width:"100%",boxSizing:"border-box",outline:"none"};
+var LBL={fontSize:11,color:"#64748b",marginBottom:4,display:"block",fontWeight:700,letterSpacing:"0.5px",textTransform:"uppercase"};
+var BTN={borderRadius:10,padding:"9px 14px",fontSize:13,fontWeight:700,cursor:"pointer",border:"none"};
+
+// ── EDIT FORM (self-contained, no parent state updates while typing) ──────────
+function EditForm(props){
+  // props: item (the data), cats, onSave, onCancel
+  var item=props.item;
+  var cats=props.cats;
+  var ref=useRef(null);
+
+  // Build initial form data from item
+  var allC=[];
+  for(var ci=0;ci<cats.length;ci++){allC=allC.concat(cats[ci].compounds);}
+  var hasCompound=allC.indexOf(item.displayCompound)>-1;
+  var strOnList=false;
+  for(var mi=0;mi<MGS.length;mi++){if(MGS[mi]===item.strength){strOnList=true;break;}}
+
+  var init={
+    compound:hasCompound?item.displayCompound:"Other",
+    custom:hasCompound?"":item.displayCompound,
+    strength:strOnList?String(item.strength):(item.strength?"custom":""),
+    customStr:strOnList?"":String(item.strength||""),
+    unit:item.unit||"mg",
+    vendor:item.vendor||"",
+    lot:item.lot||"",
+    kits:String(item.kits||1),
+    vpk:String(item.vpk||10),
+    cpk:String(item.cpk||""),
+    ship:String(item.ship||""),
+    fees:String(item.fees||""),
+    mass:item.mass||false,
+    purity:item.purity||false,
+    endo:item.endo||false,
+    coa:item.coa||"",
+    overfill:item.overfill||"",
+    actual:String(item.actual||""),
+    notes:item.notes||"",
+    date:item.dateAdded||TODAY,
+    status:item.status||"On Hand",
+    eta:item.eta||""
+  };
+
+  // Store form data in ref - no state, no re-renders while typing
+  if(!ref.current){ref.current=Object.assign({},init);}
+  var fd=ref.current;
+
+  function oc(k){return function(e){fd[k]=e.target.type==="checkbox"?e.target.checked:e.target.value;};}
+
+  function handleSave(){
+    var dc=fd.compound==="Other"?fd.custom:fd.compound;
+    var strNum=fd.strength==="custom"?parseFloat(fd.customStr):parseFloat(fd.strength);
+    var kits=parseInt(fd.kits)||1;
+    var vpk=parseInt(fd.vpk)||10;
+    var tv=kits*vpk;
+    var cpk=parseFloat(fd.cpk)||0;
+    var ship=parseFloat(fd.ship)||0;
+    var fees=parseFloat(fd.fees)||0;
+    var tot=(cpk*kits)+ship+fees;
+    var cpv=tv>0?tot/tv:0;
+    var cpu=(strNum&&cpv)?cpv/strNum:null;
+    props.onSave({
+      displayCompound:dc,strength:strNum||null,unit:fd.unit||"mg",
+      vendor:fd.vendor,lot:fd.lot,kits:kits,vpk:vpk,
+      qtyVials:item.qtyVials,originalQty:tv,
+      cpk:cpk,ship:ship,fees:fees,totalCost:tot,cpv:cpv,cpu:cpu,
+      mass:!!fd.mass,purity:!!fd.purity,endo:!!fd.endo,
+      coa:fd.coa,overfill:fd.overfill,
+      actual:parseFloat(fd.actual)||null,
+      notes:fd.notes,dateAdded:fd.date||TODAY,
+      status:fd.status||"On Hand",eta:fd.eta||""
+    });
+  }
+
+  var inp=INP;
+  var lbl=LBL;
+
+  return React.createElement("div",null,
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 12px"}},
+
+      // Compound
+      React.createElement("div",{style:{marginBottom:12,gridColumn:"1/-1"}},
+        React.createElement("label",{style:lbl},"COMPOUND"),
+        React.createElement("input",{defaultValue:init.compound==="Other"?init.custom:init.compound,onChange:function(e){fd.compound=e.target.value;fd.custom=e.target.value;},style:inp,placeholder:"Compound name"})
+      ),
+
+      // Strength
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"STRENGTH"),
+        React.createElement("div",{style:{display:"flex",gap:6}},
+          React.createElement("select",{defaultValue:init.strength,onChange:oc("strength"),style:Object.assign({},inp,{flex:2})},
+            React.createElement("option",{value:""},"Select..."),
+            MGS.map(function(m){return React.createElement("option",{key:m,value:String(m)},m);}),
+            React.createElement("option",{value:"custom"},"Custom")
+          ),
+          React.createElement("select",{defaultValue:init.unit,onChange:oc("unit"),style:Object.assign({},inp,{flex:1})},
+            UNITS.map(function(u){return React.createElement("option",{key:u},u);})
+          )
+        )
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"CUSTOM AMOUNT"),
+        React.createElement("input",{defaultValue:init.customStr,onChange:oc("customStr"),style:inp,placeholder:"e.g. 8.5",type:"text",inputMode:"decimal"})
+      ),
+
+      // Vendor / Lot
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"VENDOR"),
+        React.createElement("input",{defaultValue:init.vendor,onChange:oc("vendor"),style:inp,placeholder:"e.g. WWB"})
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"LOT / BATCH #"),
+        React.createElement("input",{defaultValue:init.lot,onChange:oc("lot"),style:inp,placeholder:"Optional"})
+      ),
+
+      // Status / ETA
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"STATUS"),
+        React.createElement("select",{defaultValue:init.status,onChange:oc("status"),style:inp},
+          STATS.map(function(s){return React.createElement("option",{key:s},s);})
+        )
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"EXPECTED DATE"),
+        React.createElement("input",{type:"date",defaultValue:init.eta,onChange:oc("eta"),style:inp})
+      ),
+
+      // Kits / VPK
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"KITS PURCHASED"),
+        React.createElement("input",{type:"number",min:"1",defaultValue:init.kits,onChange:oc("kits"),style:inp})
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"VIALS PER KIT"),
+        React.createElement("input",{type:"number",min:"1",defaultValue:init.vpk,onChange:oc("vpk"),style:inp})
+      ),
+
+      // Costs
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"COST PER KIT ($)"),
+        React.createElement("input",{type:"number",defaultValue:init.cpk,onChange:oc("cpk"),style:inp,placeholder:"0.00"})
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"SHIPPING ($)"),
+        React.createElement("input",{type:"number",defaultValue:init.ship,onChange:oc("ship"),style:inp,placeholder:"0.00"})
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"FEES / TAX ($)"),
+        React.createElement("input",{type:"number",defaultValue:init.fees,onChange:oc("fees"),style:inp,placeholder:"0.00"})
+      ),
+      React.createElement("div",null),
+
+      // COA
+      React.createElement("div",{style:{marginBottom:12,gridColumn:"1/-1"}},
+        React.createElement("label",{style:lbl},"COA AVAILABLE"),
+        React.createElement("div",{style:{display:"flex",gap:20,flexWrap:"wrap"}},
+          [["mass","Mass Spec"],["purity","Purity"],["endo","Endotoxin"]].map(function(pair){
+            return React.createElement("label",{key:pair[0],style:{display:"flex",alignItems:"center",gap:8,fontSize:13,color:"#cbd5e1",cursor:"pointer"}},
+              React.createElement("input",{type:"checkbox",defaultChecked:init[pair[0]],onChange:oc(pair[0]),style:{width:15,height:15,accentColor:"#6366f1"}}),
+              pair[1]
+            );
+          })
+        )
+      ),
+      React.createElement("div",{style:{marginBottom:12,gridColumn:"1/-1"}},
+        React.createElement("label",{style:lbl},"COA LINK"),
+        React.createElement("input",{defaultValue:init.coa,onChange:oc("coa"),style:inp,placeholder:"https://..."})
+      ),
+
+      // Overfill / Actual
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"OVERFILL"),
+        React.createElement("select",{defaultValue:init.overfill,onChange:oc("overfill"),style:inp},
+          React.createElement("option",{value:""},"Unknown"),
+          React.createElement("option",null,"Overfilled"),
+          React.createElement("option",null,"Accurate"),
+          React.createElement("option",null,"Underfilled")
+        )
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("label",{style:lbl},"ACTUAL "+init.unit.toUpperCase()),
+        React.createElement("input",{type:"number",defaultValue:init.actual,onChange:oc("actual"),style:inp,placeholder:"e.g. 10.3"})
+      ),
+
+      // Notes / Date
+      React.createElement("div",{style:{marginBottom:12,gridColumn:"1/-1"}},
+        React.createElement("label",{style:lbl},"NOTES"),
+        React.createElement("textarea",{defaultValue:init.notes,onChange:oc("notes"),style:Object.assign({},inp,{minHeight:60,resize:"vertical"}),placeholder:"Any notes..."})
+      ),
+      React.createElement("div",{style:{marginBottom:12,gridColumn:"1/-1"}},
+        React.createElement("label",{style:lbl},"PURCHASE DATE"),
+        React.createElement("input",{type:"date",defaultValue:init.date,onChange:oc("date"),style:inp})
+      )
+    ),
+
+    // Buttons
+    React.createElement("div",{style:{display:"flex",gap:10,marginTop:8}},
+      React.createElement("button",{onClick:props.onCancel,style:Object.assign({},BTN,{flex:1,background:"#1e293b",color:"#94a3b8",border:"1px solid #334155"})},"Cancel"),
+      React.createElement("button",{onClick:handleSave,style:Object.assign({},BTN,{flex:2,background:"#6366f1",color:"#fff"})},(props.isNew?"Add to Inventory":"Save Changes"))
+    )
+  );
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function Modal(props){
+  return React.createElement("div",{
+    style:{position:"fixed",inset:0,background:"rgba(2,8,23,.88)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16},
+    onClick:function(e){if(e.target===e.currentTarget)props.onClose();}
+  },
+    React.createElement("div",{style:{background:"#0f172a",border:"1px solid #1e293b",borderRadius:18,padding:24,width:"100%",maxWidth:600,maxHeight:"92vh",overflowY:"auto",color:"#e2e8f0"}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}},
+        React.createElement("h2",{style:{margin:0,fontSize:17,fontWeight:800}},props.title),
+        React.createElement("button",{onClick:props.onClose,style:{background:"none",border:"none",color:"#475569",fontSize:24,cursor:"pointer"}},"×")
+      ),
+      props.children
+    )
+  );
+}
+
+// ── ITEM CARD ─────────────────────────────────────────────────────────────────
+function ICard(props){
+  var it=props.it;
+  var cat=props.cat;
+  var acc=CC[cat]||"#6366f1";
+  var st=it.status||"On Hand";
+  var isOrd=st==="Ordered"||st==="In Transit";
+  var stBg=isOrd?"#431407":it.qtyVials===0?"#450a0a":it.qtyVials<=2?"#422006":"#052e16";
+  var stCol=isOrd?"#fdba74":it.qtyVials===0?"#fca5a5":it.qtyVials<=2?"#fcd34d":"#86efac";
+  var stTxt=isOrd?st:it.qtyVials===0?"Out of Stock":it.qtyVials<=2?"Low ("+it.qtyVials+")":"In Stock ("+it.qtyVials+")";
+  return React.createElement("div",{
+    style:{background:"#0f172a",border:"1px solid #1e293b",borderLeft:"3px solid "+acc,borderRadius:12,padding:14,cursor:"pointer"},
+    onClick:function(){props.onDetail(it.id);}
+  },
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}},
+      React.createElement("div",null,
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}},
+          React.createElement("span",{style:{fontSize:16,fontWeight:900,color:"#f8fafc"}},it.displayCompound),
+          it.strength?React.createElement("span",{style:{background:"#1e293b",color:"#94a3b8",padding:"2px 8px",borderRadius:10,fontSize:11,fontWeight:700}},it.strength+" "+(it.unit||"mg")):null,
+          React.createElement("span",{style:{background:stBg,color:stCol,padding:"2px 8px",borderRadius:10,fontSize:11,fontWeight:700}},stTxt)
+        ),
+        React.createElement("div",{style:{fontSize:12,marginTop:3}},
+          React.createElement("span",{style:{color:"#e2e8f0",fontWeight:800}},it.vendor),
+          it.lot?React.createElement("span",{style:{color:"#475569"}}," · Lot "+it.lot):null,
+          React.createElement("span",{style:{color:"#334155"}}," · "+it.dateAdded),
+          (isOrd&&it.eta)?React.createElement("span",{style:{color:"#fdba74",fontWeight:700}}," · ETA "+it.eta):null
+        ),
+        React.createElement("span",{style:{fontSize:10,fontWeight:700,color:acc,background:acc+"22",padding:"2px 7px",borderRadius:8,marginTop:4,display:"inline-block"}},cat),
+        BFORM[it.displayCompound]?React.createElement("span",{style:{fontSize:11,color:"#64748b",marginLeft:6}},BFORM[it.displayCompound]):null
+      ),
+      React.createElement("div",{style:{textAlign:"right"}},
+        React.createElement("div",{style:{fontSize:18,fontWeight:900,color:"#a5b4fc"}},"$"+((parseFloat(it.totalCost)||0).toFixed(2))),
+        React.createElement("div",{style:{fontSize:11,color:"#475569"}},"$"+((parseFloat(it.cpv)||0).toFixed(2))+"/vial"),
+        (it.cpu)?React.createElement("div",{style:{fontSize:11,color:"#fbbf24"}},"$"+((parseFloat(it.cpu)||0).toFixed(4))+"/"+(it.unit||"mg")):null
+      )
+    ),
+    React.createElement("div",{style:{marginTop:8,display:"flex",gap:4,flexWrap:"wrap"}},
+      React.createElement("span",{style:{background:it.mass?"#064e3b":"#1e293b",color:it.mass?"#6ee7b7":"#475569",padding:"2px 7px",borderRadius:8,fontSize:11,fontWeight:700}},it.mass?"Mass ✓":"Mass ✗"),
+      React.createElement("span",{style:{background:it.purity?"#064e3b":"#1e293b",color:it.purity?"#6ee7b7":"#475569",padding:"2px 7px",borderRadius:8,fontSize:11,fontWeight:700}},it.purity?"Purity ✓":"Purity ✗"),
+      React.createElement("span",{style:{background:it.endo?"#064e3b":"#1e293b",color:it.endo?"#6ee7b7":"#475569",padding:"2px 7px",borderRadius:8,fontSize:11,fontWeight:700}},it.endo?"Endotoxin ✓":"Endotoxin ✗")
+    ),
+    React.createElement("div",{style:{marginTop:8,display:"flex",gap:6},onClick:function(e){e.stopPropagation();}},
+      isOrd?
+        React.createElement("button",{onClick:function(){props.onRecv(it.id);},style:Object.assign({},BTN,{flex:1,background:"#052e16",color:"#86efac",border:"1px solid #86efac",fontSize:12})},"✓ Mark Received"):
+        [
+          React.createElement("button",{key:"u",onClick:function(){props.onAdj(it.id,"use");},style:Object.assign({},BTN,{flex:1,background:"#1e293b",color:"#94a3b8",border:"1px solid #334155",fontSize:12})},"Use"),
+          React.createElement("button",{key:"s",onClick:function(){props.onAdj(it.id,"sell");},style:Object.assign({},BTN,{flex:1,background:"#1e293b",color:"#94a3b8",border:"1px solid #334155",fontSize:12})},"Sell"),
+          React.createElement("button",{key:"r",onClick:function(){props.onAdj(it.id,"restock");},style:Object.assign({},BTN,{flex:1,background:"#1e293b",color:"#a5b4fc",border:"1px solid #334155",fontSize:12})},"+ Restock")
+        ]
+    )
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function App(){
+  var init=load();
+  var sp=useState(init.p);var P=sp[0];var setP=sp[1];
+  var sb=useState(init.b);var B=sb[0];var setB=sb[1];
+  var sn=useState(init.n);var N=sn[0];var setN=sn[1];
+  var sdk=useState(init.dk);var dk=sdk[0];var setDk=sdk[1];
+  var sta=useState("peptides");var tab=sta[0];var setTab=sta[1];
+  var sad=useState(false);var showAdd=sad[0];var setAdd=sad[1];
+  var sed=useState(null);var showEdit=sed[0];var setEdit=sed[1];
+  var sde=useState(null);var showDetail=sde[0];var setDetail=sde[1];
+  var saj=useState(null);var showAdj=saj[0];var setAdj=saj[1];
+  var sam=useState("use");var adjMode=sam[0];var setAM=sam[1];
+  var saq=useState(1);var adjQty=saq[0];var setAQ=saq[1];
+  var sau=useState("vial");var adjUnit=sau[0];var setAU=sau[1];
+  var ssp=useState("");var sellPx=ssp[0];var setSP=ssp[1];
+
+  useEffect(function(){save(P,B,N,dk);},[P,B,N,dk]);
+
+  var TC={
+    peptides:{label:"Peptides",inv:P,setI:setP,cats:PCAT,getC:function(n){return getCat(n,PCAT);}},
+    blends:{label:"Blends",inv:B,setI:setB,cats:BCAT,getC:function(){return"Blends";}},
+    nonpeptides:{label:"Non-Peptides",inv:N,setI:setN,cats:NCAT,getC:function(n){return getCat(n,NCAT);}},
+    sales:{label:"Sales",inv:[],setI:function(){},cats:[],getC:function(){return "";}}
+  };
+  var tc=TC[tab];
+  var allI=P.concat(B).concat(N);
+  var detailIt=null;for(var di=0;di<allI.length;di++){if(allI[di].id===showDetail){detailIt=allI[di];break;}}
+  var adjIt=null;for(var ai=0;ai<allI.length;ai++){if(allI[ai].id===showAdj){adjIt=allI[ai];break;}}
+  var editIt=null;for(var ei=0;ei<allI.length;ei++){if(allI[ei].id===showEdit){editIt=allI[ei];break;}}
+  var allSales=allI.reduce(function(a,i){return a.concat((i.sales||[]).map(function(s){return Object.assign({},s,{compound:i.displayCompound,vendor:i.vendor});}));},[]);
+  var totInv=allI.reduce(function(s,i){return s+(parseFloat(i.totalCost)||0);},0);
+  var totRev=allI.reduce(function(s,i){return s+(parseFloat(i.totalRevenue)||0);},0);
+  var totProf=allI.reduce(function(s,i){return s+(parseFloat(i.totalProfit)||0);},0);
+  var totOH=allI.filter(function(i){return(i.status||"On Hand")==="On Hand";}).reduce(function(s,i){return s+i.qtyVials;},0);
+  var totOrd=allI.filter(function(i){return i.status==="Ordered"||i.status==="In Transit";}).reduce(function(s,i){return s+i.qtyVials;},0);
+
+  function mkNew(){
+    return {id:uid(),displayCompound:"",strength:null,unit:"mg",vendor:"",lot:"",kits:1,vpk:10,qtyVials:10,originalQty:10,cpk:0,ship:0,fees:0,totalCost:0,cpv:0,cpu:null,mass:false,purity:false,endo:false,coa:"",overfill:"",actual:null,notes:"",dateAdded:TODAY,status:"On Hand",eta:"",sales:[],totalRevenue:0,totalProfit:0,archived:false,log:[]};
+  }
+
+  function handleSaveEdit(fd){
+    tc.setI(function(prev){
+      return prev.map(function(it){
+        if(it.id!==showEdit)return it;
+        return Object.assign({},it,fd,{id:it.id,qtyVials:it.qtyVials,sales:it.sales||[],totalRevenue:it.totalRevenue||0,totalProfit:it.totalProfit||0,log:(it.log||[]).concat(["Edited "+new Date().toLocaleDateString()])});
+      });
+    });
+    setEdit(null);
+  }
+
+  function handleAdd(fd){
+    if(!fd.displayCompound||!fd.vendor){alert("Please enter compound and vendor.");return;}
+    var kits=parseInt(fd.kits)||1;
+    var vpk=parseInt(fd.vpk)||10;
+    var tv=kits*vpk;
+    var it=Object.assign({},mkNew(),fd,{id:uid(),qtyVials:tv,originalQty:tv,log:["Added "+kits+" kit(s) ("+tv+" vials) "+TODAY]});
+    tc.setI(function(prev){return prev.concat([it]);});
+    setAdd(false);
+  }
+
+  function handleRecv(id){
+    tc.setI(function(prev){return prev.map(function(it){if(it.id!==id)return it;return Object.assign({},it,{status:"On Hand",eta:"",log:(it.log||[]).concat(["Received "+new Date().toLocaleDateString()])});});});
+  }
+
+  function handleAdj(){
+    var qty=parseInt(adjQty)||1;
+    tc.setI(function(prev){return prev.map(function(it){
+      if(it.id!==showAdj)return it;
+      var vc=adjUnit==="kit"?qty*(it.vpk||1):qty;
+      var nq=Math.max(0,it.qtyVials+(adjMode==="restock"?vc:-vc));
+      var sales=it.sales||[];var rev=it.totalRevenue||0;var prof=it.totalProfit||0;
+      if(adjMode==="sell"){
+        var ppv=parseFloat(sellPx)||0;var revenue=ppv*vc;var cost=(it.cpv||0)*vc;var profit=revenue-cost;
+        sales=sales.concat([{date:new Date().toLocaleDateString(),vials:vc,ppv:ppv,revenue:revenue,cost:cost,profit:profit,margin:revenue>0?((profit/revenue)*100).toFixed(1):0}]);
+        rev+=revenue;prof+=profit;
+      }
+      return Object.assign({},it,{qtyVials:nq,archived:nq===0&&adjMode==="sell",sales:sales,totalRevenue:rev,totalProfit:prof,log:(it.log||[]).concat([(adjMode==="restock"?"Restocked +":adjMode==="sell"?"Sold ":"Used ")+vc+" vials → "+nq+" remaining"])});
+    });});
+    setAdj(null);setSP("");
+  }
+
+  function handleExport(){
+    var d=JSON.stringify({p:P,b:B,n:N,exportedAt:new Date().toISOString(),version:3},null,2);
+    var blob=new Blob([d],{type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");a.href=url;a.download="peptrack-"+TODAY+".json";a.click();URL.revokeObjectURL(url);
+  }
+
+  function handleImport(e){
+    var file=e.target.files[0];if(!file)return;
+    var r=new FileReader();
+    r.onload=function(ev){
+      try{
+        var d=JSON.parse(ev.target.result);
+        var pp=d.p||d.peptides||[];var bb=d.b||d.blends||[];var nn=d.n||d.nonPeptides||[];
+        setP(pp.map(norm));setB(bb.map(norm));setN(nn.map(norm));
+        alert("Imported "+(pp.length+bb.length+nn.length)+" kits!");
+      }catch(err){alert("Invalid file.");}
+    };
+    r.readAsText(file);e.target.value="";
+  }
+
+  // Group inventory by category then compound
+  var byCat={};
+  var inv=tc.inv.filter(function(i){return !i.archived||i.qtyVials>0;});
+  inv.forEach(function(it){
+    var cat=tc.getC(it.displayCompound)||"Other";
+    if(!byCat[cat])byCat[cat]={};
+    if(!byCat[cat][it.displayCompound])byCat[cat][it.displayCompound]=[];
+    byCat[cat][it.displayCompound].push(it);
+  });
+
+  var tabStyle=function(t){return {background:"none",border:"none",borderBottom:tab===t?"2px solid #6366f1":"2px solid transparent",color:tab===t?"#a5b4fc":"#475569",padding:"11px 14px",fontSize:13,fontWeight:700,cursor:"pointer"};};
+
+  // Adjust modal preview calc
+  var adjVc=adjIt?(adjUnit==="kit"?(parseInt(adjQty)||1)*(adjIt.vpk||1):(parseInt(adjQty)||1)):0;
+  var adjRem=adjIt?Math.max(0,adjIt.qtyVials-(adjMode!=="restock"?adjVc:0)):0;
+  var adjPpv=parseFloat(sellPx)||0;
+  var adjRev=adjPpv*adjVc;
+  var adjCost=adjIt?(adjIt.cpv||0)*adjVc:0;
+  var adjProf=adjRev-adjCost;
+
+  return React.createElement("div",{style:{minHeight:"100vh",background:"#020817",color:"#e2e8f0"},className:"sb"},
+
+    // HEADER
+    React.createElement("div",{className:"st",style:{background:"linear-gradient(135deg,#0f172a,#1a1040)",borderBottom:"1px solid #1e293b",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+      React.createElement("div",null,
+        React.createElement("div",{style:{display:"flex",alignItems:"baseline"}},
+          React.createElement("span",{style:{fontSize:26,fontWeight:900,background:"linear-gradient(135deg,#6366f1,#a78bfa,#38bdf8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1}},"Pep"),
+          React.createElement("span",{style:{fontSize:26,fontWeight:900,background:"linear-gradient(135deg,#38bdf8,#6ee7b7)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-1}},"Track"),
+          React.createElement("span",{style:{fontSize:10,color:"#6366f1",fontWeight:800,letterSpacing:3,marginLeft:6}},"PRO")
+        ),
+        React.createElement("div",{style:{fontSize:9,color:"#475569"}},"by TG @JESCO831")
+      ),
+      React.createElement("div",{style:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}},
+        React.createElement("div",{style:{fontSize:11,color:"#94a3b8",textAlign:"right"}},
+          React.createElement("div",null,React.createElement("span",{style:{color:"#a5b4fc",fontWeight:800}},"$"+totInv.toFixed(2))," invested"),
+          React.createElement("div",null,React.createElement("span",{style:{color:"#86efac"}},""+totOH+" on hand"),(totOrd>0?React.createElement("span",{style:{color:"#fdba74"}},", "+totOrd+" on order"):null)),
+          (totRev>0?React.createElement("div",{style:{color:totProf>=0?"#6ee7b7":"#f87171",fontWeight:700}},"P&L: "+(totProf>=0?"+":"")+"$"+totProf.toFixed(2)):null)
+        ),
+        React.createElement("button",{onClick:function(){setDk(function(d){return !d;});},style:Object.assign({},BTN,{background:"#1e293b",color:"#94a3b8",border:"1px solid #334155",fontSize:15})},dk?"☀️ Day":"🌙 Night"),
+        React.createElement("label",{style:Object.assign({},BTN,{background:"#1e293b",color:"#94a3b8",border:"1px solid #334155",cursor:"pointer"})},"⬆ Import",React.createElement("input",{type:"file",accept:".json",onChange:handleImport,style:{display:"none"}})),
+        React.createElement("button",{onClick:handleExport,style:Object.assign({},BTN,{background:"#1e293b",color:"#94a3b8",border:"1px solid #334155"})},"⬇ Export"),
+        React.createElement("button",{onClick:function(){setAdd(true);},style:Object.assign({},BTN,{background:"#6366f1",color:"#fff"})},"+Add")
+      )
+    ),
+
+    // TABS
+    React.createElement("div",{style:{display:"flex",borderBottom:"1px solid #1e293b",background:"#0a0f1e"}},
+      ["peptides","blends","nonpeptides","sales"].map(function(t){
+        var cnt=t==="sales"?allSales.length:TC[t].inv.length;
+        return React.createElement("button",{key:t,onClick:function(){setTab(t);},style:tabStyle(t)},
+          {peptides:"Peptides",blends:"Blends",nonpeptides:"Non-Peptides",sales:"💰 Sales"}[t],
+          React.createElement("span",{style:{marginLeft:4,background:tab===t?"#6366f133":"#1e293b",color:tab===t?"#818cf8":"#334155",borderRadius:10,padding:"1px 6px",fontSize:11,fontWeight:800}},cnt)
+        );
+      })
+    ),
+
+    // STATS BAR
+    tab!=="sales"&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",background:"#0a0f1e",borderBottom:"1px solid #1e293b"}},
+      [{l:"Kits",v:tc.inv.length},{l:"On Hand",v:tc.inv.filter(function(i){return(i.status||"On Hand")==="On Hand";}).reduce(function(s,i){return s+i.qtyVials;},0)},{l:"On Order",v:tc.inv.filter(function(i){return i.status==="Ordered"||i.status==="In Transit";}).length},{l:"Invested",v:"$"+tc.inv.reduce(function(s,i){return s+(parseFloat(i.totalCost)||0);},0).toFixed(0)}].map(function(s){
+        return React.createElement("div",{key:s.l,style:{padding:"10px 12px",borderRight:"1px solid #1e293b"}},
+          React.createElement("div",{style:{fontSize:10,color:"#334155",fontWeight:800,textTransform:"uppercase"}},s.l),
+          React.createElement("div",{style:{fontSize:18,fontWeight:900,color:"#818cf8",marginTop:1}},s.v)
+        );
+      })
+    ),
+
+    // INVENTORY
+    tab!=="sales"&&React.createElement("div",{style:{padding:"14px"}},
+      inv.length===0?React.createElement("div",{style:{textAlign:"center",color:"#334155",padding:"60px 0"}},"No items yet — tap + Add to get started."):
+      Object.keys(byCat).map(function(cat){
+        var comps=byCat[cat];
+        return React.createElement("div",{key:cat,style:{marginBottom:24}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
+            React.createElement("div",{style:{width:3,height:16,background:CC[cat]||"#6366f1",borderRadius:2}}),
+            React.createElement("span",{style:{fontSize:12,fontWeight:800,color:CC[cat]||"#6366f1",letterSpacing:"0.5px",textTransform:"uppercase"}},cat)
+          ),
+          Object.keys(comps).map(function(cname){
+            var items=comps[cname];
+            var toh=items.filter(function(i){return(i.status||"On Hand")==="On Hand";}).reduce(function(s,i){return s+i.qtyVials;},0);
+            var tord=items.filter(function(i){return i.status==="Ordered"||i.status==="In Transit";}).reduce(function(s,i){return s+i.qtyVials;},0);
+            return React.createElement("div",{key:cname,style:{background:"#0f172a",border:"1px solid #1e293b",borderLeft:"3px solid "+(CC[cat]||"#6366f1"),borderRadius:12,marginBottom:8,overflow:"hidden"}},
+              React.createElement("div",{style:{padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}},
+                React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}},
+                  React.createElement("span",{style:{fontSize:16,fontWeight:900,color:"#f8fafc"}},cname),
+                  React.createElement("span",{style:{background:"#052e16",color:"#86efac",padding:"2px 7px",borderRadius:8,fontSize:11,fontWeight:700}},toh+" on hand"),
+                  tord>0&&React.createElement("span",{style:{background:"#431407",color:"#fdba74",padding:"2px 7px",borderRadius:8,fontSize:11,fontWeight:700}},tord+" on order")
+                )
+              ),
+              React.createElement("div",{style:{padding:"0 10px 10px",display:"flex",flexDirection:"column",gap:8}},
+                items.map(function(it){return React.createElement(ICard,{key:it.id,it:it,cat:cat,onDetail:setDetail,onAdj:function(id,m){setAdj(id);setAM(m);setAQ(1);setAU("vial");setSP("");},onRecv:handleRecv});})
+              )
+            );
+          })
+        );
+      })
+    ),
+
+    // SALES TAB
+    tab==="sales"&&React.createElement("div",{style:{padding:"14px"}},
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginBottom:20}},
+        [{l:"Revenue",v:"$"+totRev.toFixed(2),c:"#a5b4fc"},{l:"Profit",v:(totProf>=0?"+":"")+"$"+Math.abs(totProf).toFixed(2),c:totProf>=0?"#6ee7b7":"#f87171"},{l:"COGS",v:"$"+(totRev-totProf).toFixed(2),c:"#94a3b8"},{l:"Margin",v:totRev>0?((totProf/totRev)*100).toFixed(1)+"%":"—",c:"#6ee7b7"},{l:"Transactions",v:allSales.length,c:"#818cf8"},{l:"Vials Sold",v:allSales.reduce(function(s,i){return s+i.vials;},0),c:"#fb923c"}].map(function(s){
+          return React.createElement("div",{key:s.l,style:{background:"#0f172a",border:"1px solid #1e293b",borderRadius:12,padding:"12px 14px"}},
+            React.createElement("div",{style:{fontSize:10,color:"#475569",fontWeight:800,textTransform:"uppercase"}},s.l),
+            React.createElement("div",{style:{fontSize:20,fontWeight:900,color:s.c,marginTop:4}},s.v)
+          );
+        })
+      ),
+      allSales.length===0?React.createElement("div",{style:{textAlign:"center",color:"#334155",padding:"40px 0"}},"No sales yet"):
+      allSales.slice().reverse().map(function(s,i){
+        return React.createElement("div",{key:i,style:{background:"#0f172a",border:"1px solid #1e293b",borderRadius:10,padding:"12px",marginBottom:8}},
+          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:6}},
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontSize:14,fontWeight:800}},s.compound),
+              React.createElement("div",{style:{fontSize:11,color:"#475569"}},s.vendor+" · "+s.date+" · "+s.vials+" vials @ $"+(s.ppv||0).toFixed(2))
+            ),
+            React.createElement("div",{style:{textAlign:"right"}},
+              React.createElement("div",{style:{fontSize:14,fontWeight:900,color:s.profit>=0?"#6ee7b7":"#f87171"}},(s.profit>=0?"+":"")+"$"+s.profit.toFixed(2)),
+              React.createElement("div",{style:{fontSize:10,color:"#475569"}},s.margin+"% margin")
+            )
+          )
+        );
+      })
+    ),
+
+    // ADD MODAL
+    showAdd&&React.createElement(Modal,{title:"Add Kit — "+tc.label,onClose:function(){setAdd(false);}},
+      React.createElement(EditForm,{item:mkNew(),cats:tc.cats,isNew:true,onSave:handleAdd,onCancel:function(){setAdd(false);}})
+    ),
+
+    // EDIT MODAL
+    showEdit&&editIt&&React.createElement(Modal,{title:"Edit — "+editIt.displayCompound,onClose:function(){setEdit(null);}},
+      React.createElement(EditForm,{key:showEdit,item:editIt,cats:tc.cats,isNew:false,onSave:handleSaveEdit,onCancel:function(){setEdit(null);}})
+    ),
+
+    // DETAIL MODAL
+    showDetail&&detailIt&&React.createElement(Modal,{title:detailIt.displayCompound+(detailIt.strength?" · "+detailIt.strength+" "+(detailIt.unit||"mg"):""),onClose:function(){setDetail(null);}},
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}},
+        [{l:"Vendor",v:detailIt.vendor||"—"},{l:"Lot #",v:detailIt.lot||"—"},{l:"Status",v:detailIt.status||"On Hand"},{l:"Expected",v:detailIt.eta||"—"},{l:"Kits",v:detailIt.kits||1},{l:"Vials/Kit",v:detailIt.vpk||1},{l:"Vials",v:detailIt.qtyVials+"/"+(detailIt.originalQty||detailIt.qtyVials)},{l:"Strength",v:detailIt.strength?(detailIt.strength+" "+(detailIt.unit||"mg")+"/vial"):"—"},{l:"Price/Kit",v:"$"+(parseFloat(detailIt.cpk)||0).toFixed(2)},{l:"Shipping",v:"$"+(parseFloat(detailIt.ship)||0).toFixed(2)},{l:"Fees",v:"$"+(parseFloat(detailIt.fees)||0).toFixed(2)},{l:"Total Paid",v:"$"+(parseFloat(detailIt.totalCost)||0).toFixed(2)},{l:"Cost/Vial",v:"$"+(parseFloat(detailIt.cpv)||0).toFixed(2)},{l:"Cost/"+(detailIt.unit||"mg"),v:detailIt.cpu?"$"+(parseFloat(detailIt.cpu)||0).toFixed(4):"—"},{l:"Overfill",v:detailIt.overfill||"Unknown"},{l:"Actual "+(detailIt.unit||"mg"),v:detailIt.actual?(detailIt.actual+" "+(detailIt.unit||"mg")):"—"}].map(function(r){
+          return React.createElement("div",{key:r.l,style:{background:"#1e293b",borderRadius:8,padding:"8px 12px"}},
+            React.createElement("div",{style:{fontSize:10,color:"#475569",fontWeight:700,textTransform:"uppercase"}},r.l),
+            React.createElement("div",{style:{fontSize:13,fontWeight:800,color:"#f1f5f9",marginTop:2}},r.v)
+          );
+        })
+      ),
+      (detailIt.notes?React.createElement("div",{style:{marginBottom:12}},React.createElement("div",{style:LBL},"NOTES"),React.createElement("div",{style:{background:"#1e293b",borderRadius:8,padding:"10px 12px",fontSize:13,color:"#cbd5e1"}},detailIt.notes)):null),
+      ((detailIt.sales&&detailIt.sales.length>0)?React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("div",{style:LBL},"SALES HISTORY"),
+        React.createElement("div",{style:{background:"#1e293b",borderRadius:8,padding:"10px 12px",maxHeight:140,overflowY:"auto"}},
+          detailIt.sales.map(function(s,i){
+            return React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",fontSize:12,borderBottom:"1px solid #0f172a",paddingBottom:3,marginBottom:3}},
+              React.createElement("span",{style:{color:"#94a3b8"}},s.date+" · "+s.vials+" vials @ $"+(s.ppv||0).toFixed(2)),
+              React.createElement("span",{style:{color:s.profit>=0?"#6ee7b7":"#f87171",fontWeight:700}},(s.profit>=0?"+":"")+"$"+s.profit.toFixed(2))
+            );
+          })
+        )
+      ):null),
+      React.createElement("div",{style:{marginBottom:14}},
+        React.createElement("div",{style:LBL},"ACTIVITY LOG"),
+        React.createElement("div",{style:{background:"#1e293b",borderRadius:8,padding:"10px 12px",maxHeight:100,overflowY:"auto",fontSize:12,color:"#475569"}},
+          (detailIt.log||[]).map(function(l,i){return React.createElement("div",{key:i},"· "+l);})
+        )
+      ),
+      ((detailIt.status==="Ordered"||detailIt.status==="In Transit")?React.createElement("button",{onClick:function(){handleRecv(detailIt.id);setDetail(null);},style:Object.assign({},BTN,{width:"100%",background:"#052e16",color:"#86efac",border:"1px solid #86efac",marginBottom:10})},"✓ Mark as Received"):null),
+      React.createElement("div",{style:{display:"flex",gap:10}},
+        React.createElement("button",{onClick:function(){setEdit(detailIt.id);setDetail(null);},style:Object.assign({},BTN,{flex:1,background:"#1e293b",color:"#a5b4fc",border:"1px solid #6366f1"})},"✏️ Edit"),
+        React.createElement("button",{onClick:function(){if(confirm("Delete this kit?")){tc.setI(function(prev){return prev.filter(function(i){return i.id!==detailIt.id;});});setDetail(null);}},style:Object.assign({},BTN,{flex:1,background:"none",color:"#f87171",border:"1px solid #7f1d1d"})},"Delete")
+      )
+    ),
+
+    // ADJUST MODAL
+    showAdj&&adjIt&&React.createElement(Modal,{title:adjIt.displayCompound+(adjIt.strength?" · "+adjIt.strength+" "+(adjIt.unit||"mg"):""),onClose:function(){setAdj(null);}},
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}},
+        React.createElement("div",{style:{background:"#1e293b",borderRadius:10,padding:"12px"}},React.createElement("div",{style:{fontSize:10,color:"#475569",textTransform:"uppercase",fontWeight:700}},"Vials Left"),React.createElement("div",{style:{fontSize:26,fontWeight:900}},adjIt.qtyVials)),
+        React.createElement("div",{style:{background:"#1e293b",borderRadius:10,padding:"12px"}},React.createElement("div",{style:{fontSize:10,color:"#475569",textTransform:"uppercase",fontWeight:700}},"Kits ("+(adjIt.vpk||1)+" ea.)"),React.createElement("div",{style:{fontSize:26,fontWeight:900,color:"#818cf8"}},adjIt.vpk?(adjIt.qtyVials/adjIt.vpk).toFixed(1):"—"))
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("div",{style:LBL},"ACTION"),
+        React.createElement("div",{style:{display:"flex",gap:8}},
+          ["use","sell","restock"].map(function(m){return React.createElement("button",{key:m,onClick:function(){setAM(m);},style:Object.assign({},BTN,{flex:1,background:adjMode===m?"#6366f1":"#1e293b",color:adjMode===m?"#fff":"#475569"})},{use:"Used",sell:"Sold",restock:"Restock"}[m]);})
+        )
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("div",{style:LBL},"BY"),
+        React.createElement("div",{style:{display:"flex",gap:8}},
+          React.createElement("button",{onClick:function(){setAU("vial");},style:Object.assign({},BTN,{flex:1,background:adjUnit==="vial"?"#0f4c75":"#1e293b",color:adjUnit==="vial"?"#7dd3fc":"#475569"})},"Single Vial"),
+          React.createElement("button",{onClick:function(){setAU("kit");},style:Object.assign({},BTN,{flex:1,background:adjUnit==="kit"?"#0f4c75":"#1e293b",color:adjUnit==="kit"?"#7dd3fc":"#475569"})},("Kit ("+(adjIt.vpk||1)+" vials)"))
+        )
+      ),
+      React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("div",{style:LBL},"QUANTITY"),
+        React.createElement("input",{type:"number",min:"1",value:adjQty,onChange:function(e){setAQ(e.target.value);},style:INP})
+      ),
+      adjMode==="sell"&&React.createElement("div",{style:{marginBottom:12}},
+        React.createElement("div",{style:LBL},"PRICE PER VIAL ($)"),
+        React.createElement("input",{type:"number",value:sellPx,onChange:function(e){setSP(e.target.value);},style:INP,placeholder:"Min $"+(adjIt.cpv||0).toFixed(2)})
+      ),
+      React.createElement("div",{style:{background:"#1e293b",borderRadius:10,padding:"12px",marginBottom:14,display:"flex",gap:16,flexWrap:"wrap"}},
+        React.createElement("div",null,React.createElement("div",{style:{fontSize:10,color:"#475569",textTransform:"uppercase"}},"Deducting/Adding"),React.createElement("div",{style:{fontSize:16,fontWeight:800,color:adjMode==="restock"?"#6ee7b7":"#f87171"}},adjVc+" vials")),
+        adjMode!=="restock"&&React.createElement("div",null,React.createElement("div",{style:{fontSize:10,color:"#475569",textTransform:"uppercase"}},"Remaining"),React.createElement("div",{style:{fontSize:16,fontWeight:800,color:"#6ee7b7"}},adjRem+" vials")),
+        adjMode==="sell"&&adjRev>0&&React.createElement("div",null,React.createElement("div",{style:{fontSize:10,color:"#475569",textTransform:"uppercase"}},"Profit"),React.createElement("div",{style:{fontSize:16,fontWeight:800,color:adjProf>=0?"#6ee7b7":"#f87171"}},(adjProf>=0?"+":"")+"$"+adjProf.toFixed(2)))
+      ),
+      React.createElement("div",{style:{display:"flex",gap:10}},
+        React.createElement("button",{onClick:function(){setAdj(null);},style:Object.assign({},BTN,{flex:1,background:"#1e293b",color:"#64748b",border:"1px solid #334155"})},"Cancel"),
+        React.createElement("button",{onClick:handleAdj,style:Object.assign({},BTN,{flex:2,background:"#6366f1",color:"#fff"})},"Confirm")
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App,null));
+</script>
+<script>
+if("serviceWorker" in navigator){var c="const C='peptrack-v4';self.addEventListener('install',e=>{self.skipWaiting();});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});";navigator.serviceWorker.register(URL.createObjectURL(new Blob([c],{type:"application/javascript"}))).catch(function(){});}
+</script>
+</body>
+</html>
